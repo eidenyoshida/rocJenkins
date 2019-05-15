@@ -53,7 +53,7 @@ def call(rocProject project, boolean formatCheck, def dockerArray, def compileCo
                         testCommand.call(platform, project)
                     }
                 }
-                if(packageCommand != NULL)
+                if(packageCommand != null)
                 {
                     stage ("Package " + "${platform.jenkinsLabel}")
                     {
