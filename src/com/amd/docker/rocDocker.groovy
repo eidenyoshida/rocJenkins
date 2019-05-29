@@ -36,7 +36,7 @@ class rocDocker implements Serializable
             // Print system information for the log
             image.inside( runArgs )
             {
-                stage.sh(insideClosure)
+                stage.sh(infoCommands)
             }
         }
     }
