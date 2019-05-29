@@ -8,22 +8,15 @@ import java.nio.file.Path;
 // Docker related variables gathered together to reduce parameter bloat on function calls
 class rocDocker implements Serializable
 {
-    String baseImage = 'rocm/dev-ubuntu-16.04:2.4'
-    String buildDockerfile = 'dockerfile-build-ubuntu-rock'
-    String installDockerfile = 'dockerfile-install-ubuntu'
-    String runArgs = '--device=/dev/kfd --device=/dev/dri --group-add=video'
-    String buildArgs = ' --pull'
+    String baseImage
+    String buildDockerfile
+    String installDockerfile
+    String runArgs
+    String buildArgs
     String buildImageName
     String jenkinsLabel
     
-    def insideClosure = """
-          set -x
-          /opt/rocm/bin/hcc --version
-          pwd
-          dkms status
-      whoami
-      """      
-    
+    def infoCommands   
     def image
     def paths
     
@@ -31,37 +24,37 @@ class rocDocker implements Serializable
     {    
         stage.dir( paths.project_src_prefix )
         {
-                def user_uid = stage.sh(script: 'id -u', returnStdout: true ).trim()
-                
-                // Docker 17.05 introduced the ability to use ARG values in FROM statements
-                // Docker inspect failing on FROM statements with ARG https://issues.jenkins-ci.org/browse/JENKINS-44836
-                // build_image = docker.build( "${paths.project_name}/${build_image_name}:latest", "--pull -f docker/${buildDockerfile} --build-arg user_uid=${user_uid} --build-arg base_image=${from_image} ." )
-                
-                // JENKINS-44836 workaround by using a bash script instead of docker.build()
-                stage.sh "docker build -t ${paths.project_name}/${buildImageName}:latest -f docker/${buildDockerfile} ${buildArgs} --build-arg user_uid=${user_uid} --build-arg base_image=${baseImage} ."
-                image = stage.docker.image( "${paths.project_name}/${buildImageName}:latest" )
-                // Print system information for the log
-                image.inside( runArgs )
-                {
-                    stage.sh(insideClosure)
-                }
+            def user_uid = stage.sh(script: 'id -u', returnStdout: true ).trim()
+            
+            // Docker 17.05 introduced the ability to use ARG values in FROM statements
+            // Docker inspect failing on FROM statements with ARG https://issues.jenkins-ci.org/browse/JENKINS-44836
+            // build_image = docker.build( "${paths.project_name}/${build_image_name}:latest", "--pull -f docker/${buildDockerfile} --build-arg user_uid=${user_uid} --build-arg base_image=${from_image} ." )
+            
+            // JENKINS-44836 workaround by using a bash script instead of docker.build()
+            stage.sh "docker build -t ${paths.project_name}/${buildImageName}:latest -f docker/${buildDockerfile} ${buildArgs} --build-arg user_uid=${user_uid} --build-arg base_image=${baseImage} ."
+            image = stage.docker.image( "${paths.project_name}/${buildImageName}:latest" )
+            // Print system information for the log
+            image.inside( runArgs )
+            {
+                stage.sh(insideClosure)
+            }
         }
     }
 
     void runCommand(def stage, def command)
     {
-	image.inside(runArgs)
-	{
+        image.inside(runArgs)
+        {
             stage.sh(command)
-	}
+        }
     }
 
     void archiveArtifacts(def stage, String artifactName)
     {
-	image.inside(runArgs)
-	{
-	    stage.archiveArtifacts artifacts: artifactName, fingerprint: true
-	}
+        image.inside(runArgs)
+        {
+            stage.archiveArtifacts artifacts: artifactName, fingerprint: true
+        }
     }
     
 /*    

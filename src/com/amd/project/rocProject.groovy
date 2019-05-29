@@ -1,5 +1,5 @@
 /* ************************************************************************
- * Copyright 2019 Advanced Micro Devices, Inc.
+ * Copyright 2018-2019 Advanced Micro Devices, Inc.
  * ************************************************************************ */
 
 package com.amd.project
@@ -15,20 +15,20 @@ class rocProject implements Serializable
     String name
     
     String testDirectory = 'build/release'
-
+  
     def timeout
     
     class timeoutData
     {
-	int compile = 2
-	int test = 4
+	      int compile = 2
+	      int test = 4
     }
-
+    
     rocProject(String name)
     {
         this.name = name
         paths = new project_paths(
-            project_name: name+'-ubuntu' )
+            project_name: name)
         compiler = new compiler_data()
         timeout = new timeoutData()
     }
