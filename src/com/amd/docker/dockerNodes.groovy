@@ -6,8 +6,11 @@ package com.amd.docker
 import com.amd.project.*
 import com.amd.docker.rocDocker
 
+import java.nio.file.Path
 
-import java.nio.file.Path;
+import hudson.model.*
+import hudson.slaves.*
+import jenkins.model.*
 
 class dockerNodes implements Serializable
 {
@@ -15,7 +18,10 @@ class dockerNodes implements Serializable
 
     dockerNodes(def jenkinsGPULabels = ['gfx900'], String rocmVersion = 'rocm25', rocProject prj)
     {
+        
         dockerArray = [:]
+        String baseRunArgs = '--device=/dev/kfd --device=/dev/dri --group-add=video'
+        
         jenkinsGPULabels.each
         {
             if(it.contains('cuda'))
@@ -44,11 +50,31 @@ class dockerNodes implements Serializable
                                 baseImage: 'rocm/dev-centos-7:2.5',
                                 buildDockerfile: 'dockerfile-build-centos',
                                 installDockerfile: 'dockerfile-install-centos',
-                                runArgs: '--device=/dev/kfd --device=/dev/dri --group-add=video',
+                                runArgs: baseRunArgs,
                                 buildArgs: '--pull',
                                 infoCommands: """
                                                 set -x 
                                                 /opt/rocm/bin/hcc --version 
+                                                pwd 
+                                                dkms status
+                                            whoami
+                                            """,
+                                buildImageName:'build-' + prj.name + '-artifactory',
+                                paths: prj.paths,
+                                jenkinsLabel: it + " && " + rocmVersion
+                        )
+            }
+            else if(it.contains('hip-clang'))
+            {
+                dockerArray[it] = new rocDocker(
+                                baseImage: 'ashi1/hip-clang:v3',
+                                buildDockerfile: 'dockerfile-build-ubuntu-rock',
+                                installDockerfile: 'dockerfile-install-ubuntu',
+                                runArgs: baseRunArgs,
+                                buildArgs: '--pull',
+                                infoCommands: """
+                                                set -x 
+                                                /opt/rocm/bin/hipcc --version 
                                                 pwd 
                                                 dkms status
                                             whoami
@@ -64,7 +90,7 @@ class dockerNodes implements Serializable
                                 baseImage: 'rocm/dev-ubuntu-16.04:2.5',
                                 buildDockerfile: 'dockerfile-build-ubuntu-rock',
                                 installDockerfile: 'dockerfile-install-ubuntu',
-                                runArgs: '--device=/dev/kfd --device=/dev/dri --group-add=video',
+                                runArgs: baseRunArgs,
                                 buildArgs: ' --pull',
                                 infoCommands: """
                                                 set -x 

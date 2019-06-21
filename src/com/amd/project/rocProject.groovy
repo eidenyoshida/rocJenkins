@@ -13,7 +13,6 @@ class rocProject implements Serializable
     def paths
     def compiler
     String name
-    
     String testDirectory = 'build/release'
   
     def timeout
@@ -28,7 +27,8 @@ class rocProject implements Serializable
     {
         this.name = name
         paths = new project_paths(
-            project_name: name)
+            project_name: name,
+            project_build_prefix: 'src/' + name)
         compiler = new compiler_data()
         timeout = new timeoutData()
     }

@@ -19,14 +19,25 @@ def call(rocProject project, boolean formatCheck, def dockerArray, def compileCo
                 stage ("Docker " + "${platform.jenkinsLabel}") 
                 {
                     build.checkout(project.paths)
+                    
+                    if(env.MULTI_GPU == '1')
+                    {
+                        String maskNum = env.EXECUTOR_NUMBER
+                        String gpuMask = 'DOCKER_GPU_MASK_'+maskNum
+                        platform.runArgs += ' ' + env[gpuMask]
+                        echo platform.runArgs
+                    }
+                    
                     platform.buildImage(this)
                 }
-                if (formatCheck)
+                if (formatCheck && !platform.jenkinsLabel.contains('hip-clang'))
                 {
                     stage ("Format Check " + "${platform.jenkinsLabel}")
                     {
-                
-                        formatCommand =  '''
+                        formatCommand = """
+                        /opt/rocm/hcc/bin/clang-format --version;
+                        cd ${project.paths.project_build_prefix};
+                        /opt/rocm/hcc/bin/clang-format -style=file -dump-config;
                         find . -iname \'*.h\' \
                             -o -iname \'*.hpp\' \
                             -o -iname \'*.cpp\' \
@@ -34,10 +45,11 @@ def call(rocProject project, boolean formatCheck, def dockerArray, def compileCo
                             -o -iname \'*.hpp.in\' \
                             -o -iname \'*.cpp.in\' \
                         | grep -v 'build/' \
-                        | xargs -n 1 -P 1 -I{} -t sh -c \'clang-format-3.8 -style=file {} | diff - {}\'
-                        '''
+                        | xargs -n 1 -P 1 -I{} -t sh -c \'/opt/rocm/hcc/bin/clang-format -style=file {} | diff - {}\'
+                        """
+
                         platform.runCommand(this, formatCommand)
-                    }
+                    }   
                 }
                 stage ("Compile " + "${platform.jenkinsLabel}")
                 {   
