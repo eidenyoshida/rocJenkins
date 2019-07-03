@@ -4,6 +4,8 @@
 
 package com.amd.project
 
+import java.nio.file.Path
+
 // Paths variables bundled together to reduce parameter bloat on function calls
 class project_paths implements Serializable
 {
@@ -16,7 +18,7 @@ class project_paths implements Serializable
 
     void construct_build_prefix()
     {
-        project_build_prefix = build_prefix + '/' + project_name;
+        project_build_prefix = build_prefix + '/' + project_name.toLowerCase();
     }
     
 }

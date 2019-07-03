@@ -8,6 +8,8 @@ package com.amd.project
 import com.amd.project.project_paths
 //import com.amd.project.compiler_data
 
+import java.nio.file.Path
+
 class rocProject implements Serializable
 {
     def paths
@@ -20,15 +22,15 @@ class rocProject implements Serializable
     class timeoutData
     {
 	      int compile = 2
-	      int test = 4
+	      int test = 5
     }
     
     rocProject(String name)
     {
         this.name = name
         paths = new project_paths(
-            project_name: name,
-            project_build_prefix: 'src/' + name)
+            project_name: name.toLowerCase(),
+            project_build_prefix: 'src/' + name.toLowerCase())
         compiler = new compiler_data()
         timeout = new timeoutData()
     }

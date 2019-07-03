@@ -39,7 +39,7 @@ class dockerNodes implements Serializable
                                                 nvidia-smi
                                             whoami
                                             """,
-                                buildImageName:'build-' + prj.name + '-artifactory',
+                                buildImageName:'build-' + prj.name.toLowerCase() + '-artifactory',
                                 paths: prj.paths,
                                 jenkinsLabel: it + " && " + rocmVersion
                         )
@@ -59,7 +59,7 @@ class dockerNodes implements Serializable
                                                 dkms status
                                             whoami
                                             """,
-                                buildImageName:'build-' + prj.name + '-artifactory',
+                                buildImageName:'build-' + prj.name.toLowerCase() + '-artifactory',
                                 paths: prj.paths,
                                 jenkinsLabel: it + " && " + rocmVersion
                         )
@@ -79,7 +79,7 @@ class dockerNodes implements Serializable
                                                 dkms status
                                             whoami
                                             """,
-                                buildImageName:'build-' + prj.name + '-artifactory',
+                                buildImageName:'build-' + prj.name.toLowerCase() + '-artifactory',
                                 paths: prj.paths,
                                 jenkinsLabel: it + " && " + rocmVersion
                         )
@@ -99,7 +99,7 @@ class dockerNodes implements Serializable
                                                 dkms status
                                             whoami
                                             """, 
-                                buildImageName:'build-' + prj.name + '-artifactory',
+                                buildImageName:'build-' + prj.name.toLowerCase() + '-artifactory',
                                 paths: prj.paths,
                                 jenkinsLabel: it + " && " + rocmVersion
                         )

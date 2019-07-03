@@ -6,6 +6,9 @@ import com.amd.project.*
 import com.amd.docker.rocDocker
 import java.nio.file.Path;
 
+import hudson.*
+import jenkins.*
+
 def call(rocProject project, boolean formatCheck, def dockerArray, def compileCommand, def testCommand, def packageCommand)
 {
     def action =
@@ -16,64 +19,85 @@ def call(rocProject project, boolean formatCheck, def dockerArray, def compileCo
         {
             ansiColor('vga')
             {
-                stage ("Docker " + "${platform.jenkinsLabel}") 
+                try
                 {
-                    build.checkout(project.paths)
-                    
-                    if(env.MULTI_GPU == '1')
+                    stage ("Docker " + "${platform.jenkinsLabel}") 
                     {
-                        String maskNum = env.EXECUTOR_NUMBER
-                        String gpuMask = 'DOCKER_GPU_MASK_'+maskNum
-                        platform.runArgs += ' ' + env[gpuMask]
-                        echo platform.runArgs
+                        build.checkout(project.paths)
+                    
+                        if(env.MULTI_GPU == '1')
+                        {
+                            String maskNum = env.EXECUTOR_NUMBER
+                            String gpuMask = 'DOCKER_GPU_MASK_'+maskNum
+                            platform.runArgs += ' ' + env[gpuMask]
+                            echo platform.runArgs
+                        }
+                    
+                        platform.buildImage(this)
                     }
-                    
-                    platform.buildImage(this)
-                }
-                if (formatCheck && !platform.jenkinsLabel.contains('hip-clang'))
-                {
-                    stage ("Format Check " + "${platform.jenkinsLabel}")
+                    if (formatCheck && !platform.jenkinsLabel.contains('hip-clang'))
                     {
-                        formatCommand = """
-                        /opt/rocm/hcc/bin/clang-format --version;
-                        cd ${project.paths.project_build_prefix};
-                        /opt/rocm/hcc/bin/clang-format -style=file -dump-config;
-                        find . -iname \'*.h\' \
-                            -o -iname \'*.hpp\' \
-                            -o -iname \'*.cpp\' \
-                            -o -iname \'*.h.in\' \
-                            -o -iname \'*.hpp.in\' \
-                            -o -iname \'*.cpp.in\' \
-                        | grep -v 'build/' \
-                        | xargs -n 1 -P 1 -I{} -t sh -c \'/opt/rocm/hcc/bin/clang-format -style=file {} | diff - {}\'
-                        """
+                        stage ("Format Check " + "${platform.jenkinsLabel}")
+                        {
+                            formatCommand = """
+                            /opt/rocm/hcc/bin/clang-format --version;
+                            cd ${project.paths.project_build_prefix};
+                            /opt/rocm/hcc/bin/clang-format -style=file -dump-config;
+                            find . -iname \'*.h\' \
+                                -o -iname \'*.hpp\' \
+                                -o -iname \'*.cpp\' \
+                                -o -iname \'*.h.in\' \
+                                -o -iname \'*.hpp.in\' \
+                                -o -iname \'*.cpp.in\' \
+                            | grep -v 'build/' \
+                            | xargs -n 1 -P 1 -I{} -t sh -c \'/opt/rocm/hcc/bin/clang-format -style=file {} | diff - {}\'
+                            """
 
-                        platform.runCommand(this, formatCommand)
-                    }   
-                }
-                stage ("Compile " + "${platform.jenkinsLabel}")
-                {   
-                    timeout(time: project.timeout.compile, unit: 'HOURS')
-                    {
-                        compileCommand.call(platform,project)
+                            platform.runCommand(this, formatCommand)
+                        }   
                     }
-                }
-                if(testCommand != null)
-                {
-                    stage ("Test " + "${platform.jenkinsLabel}")
-                    {
-                        timeout(time: project.timeout.test, unit: 'HOURS')
-                        {   
-                            testCommand.call(platform, project)
+                    stage ("Compile " + "${platform.jenkinsLabel}")
+                    {   
+                        timeout(time: project.timeout.compile, unit: 'HOURS')
+                        {
+                            compileCommand.call(platform,project)
                         }
                     }
-                }
-                if(packageCommand != null)
-                {
-                    stage ("Package " + "${platform.jenkinsLabel}")
+                    if(testCommand != null)
                     {
-                        packageCommand.call(platform, project)
+                        stage ("Test " + "${platform.jenkinsLabel}")
+                        {
+                            timeout(time: project.timeout.test, unit: 'HOURS')
+                            {   
+                                testCommand.call(platform, project)
+                            }
+                        }
                     }
+                    if(packageCommand != null)
+                    {
+                        stage ("Package " + "${platform.jenkinsLabel}")
+                        {
+                            packageCommand.call(platform, project)
+                        }
+                    } 
+                }
+                catch(e)
+                {
+                    stage("Mail " + "${platform.jenkinsLabel}")
+                    {
+                        mail(
+                            bcc: '',
+                            body: "Please go to http://hsautil.amd.com/job/ROCmSoftwarePlatform/job/${project.name} to view the error",
+                            cc: '',
+                            charset: 'UTF-8',
+                            from: 'dl.mlse.lib.jenkins@amd.com',
+                            mimeType: 'text/html',
+                            replyTo: '',
+                            subject: "${env.JOB_NAME} ${env.BUILD_NUMBER} failed on ${env.NODE_NAME}",
+                            to: "dl.${project.name}-ci@amd.com" 
+                        )
+                    }
+                    throw e
                 }
             }
         }
