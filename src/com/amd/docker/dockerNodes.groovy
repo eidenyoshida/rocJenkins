@@ -64,8 +64,9 @@ class dockerNodes implements Serializable
                                 jenkinsLabel: it + " && " + rocmVersion
                         )
             }
-            else if(it.contains('hip-clang'))
+            else if(false)
             {
+                //enable when new hip-clang base image is created and has a proper tag
                 dockerArray[it] = new rocDocker(
                                 baseImage: 'compute-artifactory.amd.com:5000/rocm-plus-docker/compute-roc-master-int-hipclang:630',
                                 buildDockerfile: 'dockerfile-build-ubuntu',
@@ -79,6 +80,26 @@ class dockerNodes implements Serializable
                                                 dkms status
                                                 whoami
                                             ln -s /opt/rocm/hip/lib/libamdcomgr64.so /opt/rocm/lib/libamdcomgr64.so
+                                            """,
+                                buildImageName:'build-' + prj.name.toLowerCase() + '-artifactory',
+                                paths: prj.paths,
+                                jenkinsLabel: it + " && " + rocmVersion
+                        )
+            }
+            else if(it.contains('hip-clang'))
+            {
+                dockerArray[it] = new rocDocker(
+                                baseImage: 'ashi1/hip-clang:v3',
+                                buildDockerfile: 'dockerfile-build-ubuntu-rock',
+                                installDockerfile: 'dockerfile-install-ubuntu',
+                                runArgs: baseRunArgs,
+                                buildArgs: '--pull',
+                                infoCommands: """
+                                                set -x 
+                                                /opt/rocm/hip/bin/hipcc --version 
+                                                pwd 
+                                                dkms status
+                                                whoami
                                             """,
                                 buildImageName:'build-' + prj.name.toLowerCase() + '-artifactory',
                                 paths: prj.paths,
