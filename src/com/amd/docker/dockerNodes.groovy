@@ -16,7 +16,7 @@ class dockerNodes implements Serializable
 {
     def dockerArray
 
-    dockerNodes(def jenkinsGPULabels = ['gfx900'], String rocmVersion = 'rocm25', rocProject prj)
+    dockerNodes(def jenkinsGPULabels = ['gfx900'], String rocmVersion = 'rocm26', rocProject prj)
     {
         
         dockerArray = [:]
@@ -47,7 +47,7 @@ class dockerNodes implements Serializable
             else if(it.contains('centos7'))
             {
                 dockerArray[it] = new rocDocker(
-                                baseImage: 'rocm/dev-centos-7:2.5',
+                                baseImage: 'rocm/dev-centos-7:2.6',
                                 buildDockerfile: 'dockerfile-build-centos',
                                 installDockerfile: 'dockerfile-install-centos',
                                 runArgs: baseRunArgs,
@@ -67,17 +67,18 @@ class dockerNodes implements Serializable
             else if(it.contains('hip-clang'))
             {
                 dockerArray[it] = new rocDocker(
-                                baseImage: 'ashi1/hip-clang:v3',
-                                buildDockerfile: 'dockerfile-build-ubuntu-rock',
+                                baseImage: 'compute-artifactory.amd.com:5000/rocm-plus-docker/compute-roc-master-int-hipclang:630',
+                                buildDockerfile: 'dockerfile-build-ubuntu',
                                 installDockerfile: 'dockerfile-install-ubuntu',
                                 runArgs: baseRunArgs,
                                 buildArgs: '--pull',
                                 infoCommands: """
                                                 set -x 
-                                                /opt/rocm/bin/hipcc --version 
+                                                /opt/rocm/hip/bin/hipcc --version 
                                                 pwd 
                                                 dkms status
-                                            whoami
+                                                whoami
+                                            ln -s /opt/rocm/hip/lib/libamdcomgr64.so /opt/rocm/lib/libamdcomgr64.so
                                             """,
                                 buildImageName:'build-' + prj.name.toLowerCase() + '-artifactory',
                                 paths: prj.paths,
@@ -87,7 +88,7 @@ class dockerNodes implements Serializable
             else
             {
                 dockerArray[it] = new rocDocker(
-                                baseImage: 'rocm/dev-ubuntu-16.04:2.5',
+                                baseImage: 'rocm/dev-ubuntu-16.04:2.6',
                                 buildDockerfile: 'dockerfile-build-ubuntu-rock',
                                 installDockerfile: 'dockerfile-install-ubuntu',
                                 runArgs: baseRunArgs,
