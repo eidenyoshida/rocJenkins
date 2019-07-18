@@ -79,12 +79,27 @@ def call(rocProject project, boolean formatCheck, def dockerArray, def compileCo
                         {
                             packageCommand.call(platform, project)
                         }
-                    } 
+                    }
+                    if(platform.jenkinsLabel.contains('centos'))
+                    {
+                        //This is temporary until CentOS 7 images support GPU access for the Jenkins user
+                        stage ("Permissions " + "${platform.jenkinsLabel}")
+                        {
+                            permissionsCommand = "sudo chown jenkins -R ./*"
+                        
+                            platform.runCommand(this, permissionsCommand)
+                        }
+                    }
                 }
                 catch(e)
                 {
                     stage("Mail " + "${platform.jenkinsLabel}")
                     {
+                        if(platform.jenkinsLabel.contains('hip-clang'))
+                        {
+                            //hip-clang is experimental for now
+                            currentBuild.result = 'UNSTABLE'
+                        }
                         mail(
                             bcc: '',
                             body: "Please go to http://hsautil.amd.com/job/ROCmSoftwarePlatform/job/${project.name} to view the error",
@@ -93,7 +108,7 @@ def call(rocProject project, boolean formatCheck, def dockerArray, def compileCo
                             from: 'dl.mlse.lib.jenkins@amd.com',
                             mimeType: 'text/html',
                             replyTo: '',
-                            subject: "${env.JOB_NAME} ${env.BUILD_NUMBER} failed on ${env.NODE_NAME}",
+                            subject: "${env.JOB_NAME} build #${env.BUILD_NUMBER} status is ${currentBuild.result} on ${env.NODE_NAME}",
                             to: "dl.${project.name}-ci@amd.com" 
                         )
                     }

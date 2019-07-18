@@ -29,8 +29,7 @@ class rocProject implements Serializable
     {
         this.name = name
         paths = new project_paths(
-            project_name: name.toLowerCase(),
-            project_build_prefix: 'src/' + name.toLowerCase())
+            project_name: name.toLowerCase())
         compiler = new compiler_data()
         timeout = new timeoutData()
     }

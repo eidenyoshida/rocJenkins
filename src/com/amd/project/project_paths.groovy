@@ -10,9 +10,9 @@ import java.nio.file.Path
 class project_paths implements Serializable
 {
     String project_name
-    String src_prefix ='src'
+    String src_prefix = org.apache.commons.lang.RandomStringUtils.random(9, true, true)
     String project_src_prefix
-    String build_prefix = 'src'
+    String build_prefix = src_prefix
     String project_build_prefix 
     String build_command = './install -c' 
 
