@@ -23,17 +23,20 @@ def call(rocProject project, boolean formatCheck, def dockerArray, def compileCo
                 {
                     stage ("Docker " + "${platform.jenkinsLabel}") 
                     {
-                        build.checkout(project.paths)
-                    
-                        if(env.MULTI_GPU == '1')
+                        timeout(time: project.timeout.docker, unit: 'HOURS')
                         {
-                            String maskNum = env.EXECUTOR_NUMBER
-                            String gpuMask = 'DOCKER_GPU_MASK_'+maskNum
-                            platform.runArgs += ' ' + env[gpuMask]
-                            echo platform.runArgs
-                        }
+                            build.checkout(project.paths)
                     
-                        platform.buildImage(this)
+                            if(env.MULTI_GPU == '1')
+                            {
+                                String maskNum = env.EXECUTOR_NUMBER
+                                String gpuMask = 'DOCKER_GPU_MASK_'+maskNum
+                                platform.runArgs += ' ' + env[gpuMask]
+                                echo platform.runArgs
+                            }
+
+                            platform.buildImage(this)
+                        }
                     }
                     if (formatCheck && !platform.jenkinsLabel.contains('hip-clang'))
                     {
@@ -57,19 +60,43 @@ def call(rocProject project, boolean formatCheck, def dockerArray, def compileCo
                         }   
                     }
                     stage ("Compile " + "${platform.jenkinsLabel}")
-                    {   
-                        timeout(time: project.timeout.compile, unit: 'HOURS')
+                    {  
+                        try 
                         {
-                            compileCommand.call(platform,project)
+                            timeout(time: project.timeout.compile, unit: 'HOURS')
+                            {
+                                compileCommand.call(platform,project)
+                            }
+                        }
+                        catch(e)
+                        {
+                            if(platform.jenkinsLabel.contains('hip-clang'))
+                            {
+                                //hip-clang is experimental for now
+                                currentBuild.result = 'UNSTABLE'
+                            }
+                            throw e
                         }
                     }
                     if(testCommand != null)
                     {
                         stage ("Test " + "${platform.jenkinsLabel}")
                         {
-                            timeout(time: project.timeout.test, unit: 'HOURS')
-                            {   
-                                testCommand.call(platform, project)
+                            try
+                            {
+                                timeout(time: project.timeout.test, unit: 'HOURS')
+                                {   
+                                    testCommand.call(platform, project)
+                                }
+                            }
+                            catch(e)
+                            {        
+                                if(platform.jenkinsLabel.contains('hip-clang'))
+                                {
+                                    //hip-clang is experimental for now
+                                    currentBuild.result = 'UNSTABLE'
+                                }
+                                throw e
                             }
                         }
                     }
@@ -97,20 +124,41 @@ def call(rocProject project, boolean formatCheck, def dockerArray, def compileCo
                     {
                         if(platform.jenkinsLabel.contains('hip-clang'))
                         {
-                            //hip-clang is experimental for now
-                            currentBuild.result = 'UNSTABLE'
+                            mail(
+                                bcc: '',
+                                body: """
+                                        Job: ${platform.jenkinsLabel} 
+                                        Node: ${env.NODE_NAME}
+                                        Please go to http://hsautil.amd.com/job/ROCmSoftwarePlatform/job/${project.name} to view the error
+                                    """,
+                                cc: '',
+                                charset: 'UTF-8',
+                                from: 'dl.mlse.lib.jenkins@amd.com',
+                                mimeType: 'text/html',
+                                replyTo: '',
+                                subject: "${project.name} ${env.BRANCH_NAME} build #${env.BUILD_NUMBER} status is ${currentBuild.result}",       
+                                to: "akila.premachandra@amd.com"
+                            )
+
                         }
-                        mail(
-                            bcc: '',
-                            body: "Please go to http://hsautil.amd.com/job/ROCmSoftwarePlatform/job/${project.name} to view the error",
-                            cc: '',
-                            charset: 'UTF-8',
-                            from: 'dl.mlse.lib.jenkins@amd.com',
-                            mimeType: 'text/html',
-                            replyTo: '',
-                            subject: "${env.JOB_NAME} build #${env.BUILD_NUMBER} status is ${currentBuild.result} on ${env.NODE_NAME}",
-                            to: "dl.${project.name}-ci@amd.com" 
-                        )
+                        else
+                        {                    
+                            mail(
+                                bcc: '',
+                                body: """
+                                        Job: ${platform.jenkinsLabel} 
+                                        Node: ${env.NODE_NAME}
+                                        Please go to http://hsautil.amd.com/job/ROCmSoftwarePlatform/job/${project.name} to view the error
+                                    """,
+                                cc: '',
+                                charset: 'UTF-8',
+                                from: 'dl.mlse.lib.jenkins@amd.com',
+                                mimeType: 'text/html',
+                                replyTo: '',
+                                subject: "${project.name} ${env.BRANCH_NAME} build #${env.BUILD_NUMBER} status is ${currentBuild.result}",       
+                                to: "dl.${project.name}-ci@amd.com"
+                            )
+                        }
                     }
                     throw e
                 }
