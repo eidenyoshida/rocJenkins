@@ -19,9 +19,9 @@ def call(rocProject project, boolean formatCheck, def dockerArray, def compileCo
         {
             ansiColor('vga')
             {
-                try
+                stage ("Docker " + "${platform.jenkinsLabel}") 
                 {
-                    stage ("Docker " + "${platform.jenkinsLabel}") 
+                    try
                     {
                         timeout(time: project.timeout.docker, unit: 'HOURS')
                         {
@@ -38,7 +38,23 @@ def call(rocProject project, boolean formatCheck, def dockerArray, def compileCo
                             platform.buildImage(this)
                         }
                     }
-                    if (formatCheck && !platform.jenkinsLabel.contains('hip-clang'))
+                    catch(e)
+                    {
+                        if(platform.jenkinsLabel.contains('hip-clang'))
+                        {
+                            //hip-clang is experimental for now
+                            currentBuild.result = 'UNSTABLE'
+                        }
+                        else
+                        {
+                            currentBuild.result = 'FAILURE'
+                        }
+            
+                    }
+                }
+                if (formatCheck && !platform.jenkinsLabel.contains('hip-clang'))
+                {
+                    try
                     {
                         stage ("Format Check " + "${platform.jenkinsLabel}")
                         {
@@ -57,79 +73,117 @@ def call(rocProject project, boolean formatCheck, def dockerArray, def compileCo
                             """
 
                             platform.runCommand(this, formatCommand)
-                        }   
+                        }
                     }
-                    stage ("Compile " + "${platform.jenkinsLabel}")
-                    {  
-                        try 
+                    catch(e)
+                    {
+                        currentBuild.result = 'FAILURE'
+                    }   
+                }
+                stage ("Compile " + "${platform.jenkinsLabel}")
+                {  
+                    try 
+                    {
+                        timeout(time: project.timeout.compile, unit: 'HOURS')
                         {
-                            timeout(time: project.timeout.compile, unit: 'HOURS')
-                            {
-                                compileCommand.call(platform,project)
+                            compileCommand.call(platform,project)
+                        }
+                    }
+                    catch(e)
+                    {
+                        if(platform.jenkinsLabel.contains('hip-clang'))
+                        {
+                            //hip-clang is experimental for now
+                            currentBuild.result = 'UNSTABLE'
+                        }
+                        else
+                        {
+                            currentBuild.result = 'FAILURE'
+                        }
+                    }
+                }
+                if(testCommand != null)
+                {
+                    stage ("Test " + "${platform.jenkinsLabel}")
+                    {
+                        try
+                        {
+                            timeout(time: project.timeout.test, unit: 'HOURS')
+                            {   
+                                testCommand.call(platform, project)
                             }
                         }
                         catch(e)
-                        {
+                        {        
                             if(platform.jenkinsLabel.contains('hip-clang'))
                             {
                                 //hip-clang is experimental for now
                                 currentBuild.result = 'UNSTABLE'
                             }
-                            throw e
-                        }
-                    }
-                    if(testCommand != null)
-                    {
-                        stage ("Test " + "${platform.jenkinsLabel}")
-                        {
-                            try
+                            else
                             {
-                                timeout(time: project.timeout.test, unit: 'HOURS')
-                                {   
-                                    testCommand.call(platform, project)
-                                }
+                                currentBuild.result = 'FAILURE'
                             }
-                            catch(e)
-                            {        
-                                if(platform.jenkinsLabel.contains('hip-clang'))
-                                {
-                                    //hip-clang is experimental for now
-                                    currentBuild.result = 'UNSTABLE'
-                                }
-                                throw e
-                            }
-                        }
-                    }
-                    if(packageCommand != null)
-                    {
-                        stage ("Package " + "${platform.jenkinsLabel}")
-                        {
-                            packageCommand.call(platform, project)
-                        }
-                    }
-                    if(platform.jenkinsLabel.contains('centos'))
-                    {
-                        //This is temporary until CentOS 7 images support GPU access for the Jenkins user
-                        stage ("Permissions " + "${platform.jenkinsLabel}")
-                        {
-                            permissionsCommand = "sudo chown jenkins -R ./*"
-                        
-                            platform.runCommand(this, permissionsCommand)
                         }
                     }
                 }
-                catch(e)
+                if(packageCommand != null)
                 {
-                    stage("Mail " + "${platform.jenkinsLabel}")
+                    try
+                    {
+                        timeout(time: project.timeout.docker, unit: 'HOURS')
+                        {
+                            stage ("Package " + "${platform.jenkinsLabel}")
+                            {
+                                packageCommand.call(platform, project)
+                            }
+                        }
+                    }
+                    catch(e)
                     {
                         if(platform.jenkinsLabel.contains('hip-clang'))
+                        {
+                            //hip-clang is experimental for now
+                            currentBuild.result = 'UNSTABLE'
+                        }
+                        else
+                        {
+                            currentBuild.result = 'FAILURE'
+                        }
+                    }
+                }
+                if(platform.jenkinsLabel.contains('centos'))
+                {
+                    try
+                    {
+                        timeout(time: project.timeout.docker, unit: 'HOURS')
+                        {
+                            //This is temporary until CentOS 7 images support GPU access for the Jenkins user
+                            stage ("Permissions " + "${platform.jenkinsLabel}")
+                            {
+                                permissionsCommand = "sudo chown jenkins -R ./*"
+                            
+                                platform.runCommand(this, permissionsCommand)
+                            }
+                        }
+                    }
+                    catch(e)
+                    {
+                        currentBuild.result = 'FAILURE'
+                    }
+                }
+                if(currentBuild.result == 'FAILURE' || currentBuild.result == 'UNSTABLE')
+                {
+                    if(platform.jenkinsLabel.contains('hip-clang') && currentBuild.result == 'UNSTABLE')
+                    {
+                        stage("Mail " + "${platform.jenkinsLabel}")
                         {
                             mail(
                                 bcc: '',
                                 body: """
-                                        Job: ${platform.jenkinsLabel} 
-                                        Node: ${env.NODE_NAME}
-                                        Please go to http://hsautil.amd.com/job/ROCmSoftwarePlatform/job/${project.name} to view the error
+                                        Job: ${platform.jenkinsLabel}
+                                        <br>Node: ${env.NODE_NAME}
+                                        <br>Please go to http://hsautil.amd.com/job/ROCmSoftwarePlatform/job/${project.name} to view the error
                                     """,
                                 cc: '',
                                 charset: 'UTF-8',
@@ -139,16 +193,18 @@ def call(rocProject project, boolean formatCheck, def dockerArray, def compileCo
                                 subject: "${project.name} ${env.BRANCH_NAME} build #${env.BUILD_NUMBER} status is ${currentBuild.result}",       
                                 to: "akila.premachandra@amd.com"
                             )
-
                         }
-                        else
-                        {                    
+                    }
+                    else if(!platform.jenkinsLabel.contains('hip-clang') && currentBuild.result == 'FAILURE')
+                    { 
+                        stage("Mail " + "${platform.jenkinsLabel}")
+                        {
                             mail(
                                 bcc: '',
                                 body: """
-                                        Job: ${platform.jenkinsLabel} 
-                                        Node: ${env.NODE_NAME}
-                                        Please go to http://hsautil.amd.com/job/ROCmSoftwarePlatform/job/${project.name} to view the error
+                                        Job: ${platform.jenkinsLabel}
+                                        <br>Node: ${env.NODE_NAME}
+                                        <br>Please go to http://hsautil.amd.com/job/ROCmSoftwarePlatform/job/${project.name} to view the error
                                     """,
                                 cc: '',
                                 charset: 'UTF-8',
@@ -160,7 +216,6 @@ def call(rocProject project, boolean formatCheck, def dockerArray, def compileCo
                             )
                         }
                     }
-                    throw e
                 }
             }
         }
