@@ -72,7 +72,7 @@ def call(rocProject project, boolean formatCheck, def dockerArray, def compileCo
                                 -o -iname \'*.h.in\' \
                                 -o -iname \'*.hpp.in\' \
                                 -o -iname \'*.cpp.in\' \
-                            | grep -v 'build/' \
+                            | grep -v -e 'build/' -e 'extern/' \
                             | xargs -n 1 -P 1 -I{} -t sh -c \'/opt/rocm/hcc/bin/clang-format -style=file {} | diff - {}\'
                             """
 
