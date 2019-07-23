@@ -51,6 +51,7 @@ def call(rocProject project, boolean formatCheck, def dockerArray, def compileCo
                         else
                         {
                             currentBuild.result = 'FAILURE'
+                            throw e
                         }
             
                     }
@@ -102,6 +103,7 @@ def call(rocProject project, boolean formatCheck, def dockerArray, def compileCo
                         else
                         {
                             currentBuild.result = 'FAILURE'
+                            throw e
                         }
                     }
                 }
@@ -126,6 +128,7 @@ def call(rocProject project, boolean formatCheck, def dockerArray, def compileCo
                             else
                             {
                                 currentBuild.result = 'FAILURE'
+                                throw e
                             }
                         }
                     }
@@ -152,6 +155,7 @@ def call(rocProject project, boolean formatCheck, def dockerArray, def compileCo
                         else
                         {
                             currentBuild.result = 'FAILURE'
+                            throw e
                         }
                     }
                 }
@@ -173,6 +177,7 @@ def call(rocProject project, boolean formatCheck, def dockerArray, def compileCo
                     catch(e)
                     {
                         currentBuild.result = 'FAILURE'
+                        throw e
                     }
                 }
                 if(currentBuild.result == 'FAILURE' || currentBuild.result == 'UNSTABLE')
@@ -217,6 +222,7 @@ def call(rocProject project, boolean formatCheck, def dockerArray, def compileCo
                                 subject: "${project.name} ${env.BRANCH_NAME} build #${env.BUILD_NUMBER} status is ${currentBuild.result}",       
                                 to: "dl.${project.name}-ci@amd.com"
                             )
+                            throw e
                         }
                     }
                 }
