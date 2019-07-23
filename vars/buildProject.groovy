@@ -32,9 +32,12 @@ def call(rocProject project, boolean formatCheck, def dockerArray, def compileCo
                                 String maskNum = env.EXECUTOR_NUMBER
                                 String gpuMask = 'DOCKER_GPU_MASK_'+maskNum
                                 platform.runArgs += ' ' + env[gpuMask]
-                                echo platform.runArgs
                             }
-
+                            else
+                            {
+                                platform.runArgs +=  " --device=/dev/dri"  
+                            }
+                            echo platform.runArgs
                             platform.buildImage(this)
                         }
                     }
