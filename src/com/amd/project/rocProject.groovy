@@ -21,7 +21,7 @@ class rocProject implements Serializable
     
     class timeoutData
     {
-          int docker = 1
+          int docker = 2
 	      int compile = 2
 	      int test = 5
     }
