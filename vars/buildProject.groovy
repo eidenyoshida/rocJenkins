@@ -29,6 +29,8 @@ def call(rocProject project, boolean formatCheck, def dockerArray, def compileCo
                         {
                             timeout(time: project.timeout.docker, unit: 'HOURS')
                             {
+                                platform.executorNumber = env.EXECUTOR_NUMBER
+
                                 build.checkout(project.paths)
                         
                                 if(env.MULTI_GPU == '1')
