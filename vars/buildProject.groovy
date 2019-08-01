@@ -140,7 +140,7 @@ def call(rocProject project, boolean formatCheck, def dockerArray, def compileCo
                             }
                         }
                     }
-                    if(packageCommand != null)
+                    if(packageCommand != null && !platform.jenkinsLabel.contains('centos'))
                     {
                         try
                         {
