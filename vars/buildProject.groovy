@@ -12,21 +12,38 @@ import jenkins.*
 def call(rocProject project, boolean formatCheck, def dockerArray, def compileCommand, def testCommand, def packageCommand)
 {
     String link
-
+    String log
+    String stageView
+    String blueOcean
+    String recipient
+    String[] stages = ['Docker ', 'Format Check ', 'Compile ', 'Test ', 'Package ', 'Permissions ', 'Mail ']
+    String failedStage
+    String reason
+    String gpu
+    String stageTime
+    int startTime = 0
+    int compileTime = 0
+    int compileEndTime = 0
+    int compileDuration = 0
+    int failTime = 0
+    int duration = 0
+    
     def action =
     {key ->
         def platform = dockerArray[key]
-
+        gpu = platform.gpuLabel(platform.jenkinsLabel)
+        
         node (platform.jenkinsLabel)
         {
             ansiColor('vga')
             {
                 try
                 {
-                    stage ("Docker " + "${platform.jenkinsLabel}") 
+                    stage ("${stages[0]}${platform.jenkinsLabel}") 
                     {
                         try
                         {
+                            startTime = (int)System.currentTimeMillis().intdiv(1000)
                             timeout(time: project.timeout.docker, unit: 'HOURS')
                             {
                                 platform.executorNumber = env.EXECUTOR_NUMBER
@@ -49,6 +66,22 @@ def call(rocProject project, boolean formatCheck, def dockerArray, def compileCo
                         }
                         catch(e)
                         {
+                            failTime = (int)System.currentTimeMillis().intdiv(1000)
+                            duration = failTime-startTime
+                            failedStage = stages[0]
+                            if(duration <= 7)
+                            {
+                                reason = "Could not resolve host github.com, Git checkout/SCM failure"
+                            }
+                            else if(duration >= project.timeout.docker*57)
+                            {
+                                reason = "Timeout due to loss of connection to the node, Authentication issues"
+                            }
+                            else
+                            {
+                                reason = "Problems building/running docker container, Permissions or dependency issues in container"
+                            }
+
                             if(platform.jenkinsLabel.contains('hip-clang'))
                             {
                                 //hip-clang is experimental for now
@@ -58,16 +91,17 @@ def call(rocProject project, boolean formatCheck, def dockerArray, def compileCo
                             {
                                 currentBuild.result = 'FAILURE'
                                 throw e
-                            }
-                
+                            } 
                         }
                     }
                     if (formatCheck && !platform.jenkinsLabel.contains('hip-clang'))
                     {
                         try
                         {
-                            stage ("Format Check " + "${platform.jenkinsLabel}")
+                            stage ("${stages[1]}${platform.jenkinsLabel}")
                             {
+                                startTime = (int)System.currentTimeMillis().intdiv(1000)
+                                
                                 formatCommand = """
                                 /opt/rocm/hcc/bin/clang-format --version;
                                 cd ${project.paths.project_build_prefix};
@@ -87,21 +121,46 @@ def call(rocProject project, boolean formatCheck, def dockerArray, def compileCo
                         }
                         catch(e)
                         {
+                            failTime = (int)System.currentTimeMillis().intdiv(1000)
+                            duration = failTime-startTime
+                            failedStage = stages[1]
+                            reason = "Not running /opt/rocm/hcc/bin/clang-format with the latest ROCm release before committing code"
                             currentBuild.result = 'FAILURE'
                             throw e
                         }   
                     }
-                    stage ("Compile " + "${platform.jenkinsLabel}")
+                    stage ("${stages[2]}${platform.jenkinsLabel}")
                     {  
                         try 
                         {
+                            compileTime = (int)System.currentTimeMillis().intdiv(1000)
+                            
                             timeout(time: project.timeout.compile, unit: 'HOURS')
                             {
                                 compileCommand.call(platform,project)
+                                compileEndTime = (int)System.currentTimeMillis().intdiv(1000)
+                                compileDuration = compileEndTime-compileTime
                             }
                         }
                         catch(e)
                         {
+                            compileEndTime = (int)System.currentTimeMillis().intdiv(1000)
+                            compileDuration = compileEndTime-compileTime
+                            failedStage = stages[2]
+
+                            if(compileDuration >= project.timeout.compile*57)
+                            {
+                                reason = "${project.name} build script timed out"
+                            }
+                            else if(project.name == 'Tensile')
+                            {
+                                reason = "${project.name} host test failure(s) on ${gpu}"
+                            }
+                            else
+                            {
+                                reason = "CMake/path issues, Broken/incompatible compiler, Permissions"
+                            }
+
                             if(platform.jenkinsLabel.contains('hip-clang'))
                             {
                                 //hip-clang is experimental for now
@@ -116,10 +175,11 @@ def call(rocProject project, boolean formatCheck, def dockerArray, def compileCo
                     }
                     if(testCommand != null)
                     {
-                        stage ("Test " + "${platform.jenkinsLabel}")
+                        stage ("${stages[3]}${platform.jenkinsLabel}")
                         {
                             try
                             {
+                                startTime = (int)System.currentTimeMillis().intdiv(1000)
                                 timeout(time: project.timeout.test, unit: 'HOURS')
                                 {   
                                     testCommand.call(platform, project)
@@ -127,6 +187,28 @@ def call(rocProject project, boolean formatCheck, def dockerArray, def compileCo
                             }
                             catch(e)
                             {        
+                                failTime = (int)System.currentTimeMillis().intdiv(1000)
+                                duration = failTime-startTime
+                               
+                                if(duration <= 60)
+                                {
+                                    failedStage = stages[2]
+                                    reason = "CMake/path issues, Broken/incompatible compiler, Permissions"
+                                    duration = compileDuration
+                                }
+                                else
+                                {
+                                    failedStage = stages[3]
+                                    if(duration >= project.timeout.test*57)
+                                    {
+                                        reason = "Timeout due to stalled tests on ${gpu}"
+                                    }
+                                    else
+                                    {
+                                        reason = "Failed tests on ${gpu}"
+                                    }
+                                }
+
                                 if(platform.jenkinsLabel.contains('hip-clang'))
                                 {
                                     //hip-clang is experimental for now
@@ -146,14 +228,28 @@ def call(rocProject project, boolean formatCheck, def dockerArray, def compileCo
                         {
                             timeout(time: project.timeout.docker, unit: 'HOURS')
                             {
-                                stage ("Package " + "${platform.jenkinsLabel}")
+                                stage ("${stages[4]}${platform.jenkinsLabel}")
                                 {
+                                    startTime = (int)System.currentTimeMillis().intdiv(1000)
                                     packageCommand.call(platform, project)
                                 }
                             }
                         }
                         catch(e)
                         {
+                            failTime = (int)System.currentTimeMillis().intdiv(1000)
+                            duration = failTime-startTime
+                            failedStage = stages[4]
+                    
+                            if(platform.jenkinsLabel.contains('centos'))
+                            {
+                                reason = "CentOS-related packaging error"
+                            }
+                            else
+                            {
+                                reason = "Trying to make a package in the incorrect directory"
+                            }
+
                             if(platform.jenkinsLabel.contains('hip-clang'))
                             {
                                 //hip-clang is experimental for now
@@ -173,8 +269,9 @@ def call(rocProject project, boolean formatCheck, def dockerArray, def compileCo
                             timeout(time: project.timeout.docker, unit: 'HOURS')
                             {
                                 //This is temporary until CentOS 7 images support GPU access for the Jenkins user
-                                stage ("Permissions " + "${platform.jenkinsLabel}")
+                                stage ("${stages[5]}${platform.jenkinsLabel}")
                                 {
+                                    startTime = (int)System.currentTimeMillis().intdiv(1000)
                                     permissionsCommand = "sudo chown jenkins -R ./*"
                                 
                                     platform.runCommand(this, permissionsCommand)
@@ -183,29 +280,48 @@ def call(rocProject project, boolean formatCheck, def dockerArray, def compileCo
                         }
                         catch(e)
                         {
+                            failTime = (int)System.currentTimeMillis().intdiv(1000)
+                            duration = failTime-startTime
+                            failedStage = stages[5]
+                            reason = "Incorrect user/group permissions for Jenkins user"
+ 
                             currentBuild.result = 'FAILURE'
                             throw e
                         }
                     }
                     if(platform.jenkinsLabel.contains('hip-clang') && currentBuild.result == 'UNSTABLE')
                     {
-                        stage("Mail " + "${platform.jenkinsLabel}")
+                        stage("${stages[6]}${platform.jenkinsLabel}")
                         {
                             if(env.BRANCH_NAME.contains('PR'))
                             {
-                                link = "http://hsautil.amd.com/job/RocmSoftwarePlatform/job/${project.name}/view/change-requests/job/${env.BRANCH_NAME}"
+                                link = "${env.JENKINS_URL}job/ROCmSoftwarePlatform/job/${project.name}/view/change-requests/job/${env.BRANCH_NAME}"
+                                log = "${env.JENKINS_URL}job/ROCmSoftwarePlatform/job/${project.name}/view/change-requests/job/${env.BRANCH_NAME}/${env.BUILD_NUMBER}/consoleText"
+                                stageView = "${env.JENKINS_URL}job/ROCmSoftwarePlatform/job/${project.name}/view/change-requests/job/${env.BRANCH_NAME}/${env.BUILD_NUMBER}/flowGraphTable"
+                                blueOcean = "${env.JENKINS_URL}blue/organizations/jenkins/ROCmSoftwarePlatform%2F${project.name}/detail/${env.BRANCH_NAME}/${env.BUILD_NUMBER}/pipeline"
                             }
                             else
                             {
-                                link = "http://hsautil.amd.com/job/RocmSoftwarePlatform/job/${project.name}/job/${env.BRANCH_NAME}"
+                                link = "${env.JENKINS_URL}job/ROCmSoftwarePlatform/job/${project.name}/job/${env.BRANCH_NAME}"
+                                log = "${env.JENKINS_URL}job/ROCmSoftwarePlatform/job/${project.name}/job/${env.BRANCH_NAME}/${env.BUILD_NUMBER}/consoleText"
+                                stageView = "${env.JENKINS_URL}job/ROCmSoftwarePlatform/job/${project.name}/job/${env.BRANCH_NAME}/${env.BUILD_NUMBER}/flowGraphTable"              
+                                blueOcean = "${env.JENKINS_URL}blue/organizations/jenkins/ROCmSoftwarePlatform%2F${project.name}/detail/${env.BRANCH_NAME}/${env.BUILD_NUMBER}/pipeline"
                             }
-                            
+                      
+                            stageTime = platform.timeFunction(duration)
+ 
                             mail(
                                 bcc: '',
                                 body: """
                                         Job: ${platform.jenkinsLabel}
+                                        <br>Failed Stage: ${failedStage}
+                                        <br>Time elapsed in Failed Stage: ${stageTime}
+                                        <br>Possible Reason(s): ${reason} 
                                         <br>Node: ${env.NODE_NAME}
-                                        <br>Please go to ${link} to view the error
+                                        <br><br>View ${project.name} ${env.BRANCH_NAME}:    ${link}
+                                        <br>View the full log:  ${log}
+                                        <br>View pipeline steps:    ${stageView}
+                                        <br>View in Blue Ocean:    ${blueOcean}
                                     """,
                                 cc: '',
                                 charset: 'UTF-8',
@@ -222,23 +338,39 @@ def call(rocProject project, boolean formatCheck, def dockerArray, def compileCo
                 {
                     if(!platform.jenkinsLabel.contains('hip-clang') && currentBuild.result == 'FAILURE')
                     { 
-                        stage("Mail " + "${platform.jenkinsLabel}")
+                        stage("${stages[6]}${platform.jenkinsLabel}")
                         {
                             if(env.BRANCH_NAME.contains('PR'))
                             {
-                                link = "http://hsautil.amd.com/job/RocmSoftwarePlatform/job/${project.name}/view/change-requests/job/${env.BRANCH_NAME}"
+                                link = "${env.JENKINS_URL}job/ROCmSoftwarePlatform/job/${project.name}/view/change-requests/job/${env.BRANCH_NAME}"
+                                log = "${env.JENKINS_URL}job/ROCmSoftwarePlatform/job/${project.name}/view/change-requests/job/${env.BRANCH_NAME}/${env.BUILD_NUMBER}/consoleText"
+                                stageView = "${env.JENKINS_URL}job/ROCmSoftwarePlatform/job/${project.name}/view/change-requests/job/${env.BRANCH_NAME}/${env.BUILD_NUMBER}/flowGraphTable" 
+                                blueOcean = "${env.JENKINS_URL}blue/organizations/jenkins/ROCmSoftwarePlatform%2F${project.name}/detail/${env.BRANCH_NAME}/${env.BUILD_NUMBER}/pipeline"
+                                recipient = "akila.premachandra@amd.com"
                             }
                             else
                             {
-                                link = "http://hsautil.amd.com/job/RocmSoftwarePlatform/job/${project.name}/job/${env.BRANCH_NAME}"
+                                link = "${env.JENKINS_URL}job/ROCmSoftwarePlatform/job/${project.name}/job/${env.BRANCH_NAME}"
+                                log = "${env.JENKINS_URL}job/ROCmSoftwarePlatform/job/${project.name}/job/${env.BRANCH_NAME}/${env.BUILD_NUMBER}/consoleText"
+                                stageView = "${env.JENKINS_URL}job/ROCmSoftwarePlatform/job/${project.name}/job/${env.BRANCH_NAME}/${env.BUILD_NUMBER}/flowGraphTable"              
+                                blueOcean = "${env.JENKINS_URL}blue/organizations/jenkins/ROCmSoftwarePlatform%2F${project.name}/detail/${env.BRANCH_NAME}/${env.BUILD_NUMBER}/pipeline"
+                                recipient = "dl.${project.name}-ci@amd.com"
                             }
+                            
+                            stageTime = platform.timeFunction(duration)
                             
                             mail(
                                 bcc: '',
                                 body: """
                                         Job: ${platform.jenkinsLabel}
+                                        <br>Failed Stage: ${failedStage}
+                                        <br>Time elapsed in Failed Stage: ${stageTime}
+                                        <br>Possible Reason(s): ${reason} 
                                         <br>Node: ${env.NODE_NAME}
-                                        <br>Please go to ${link} to view the error
+                                        <br><br>View ${project.name} ${env.BRANCH_NAME}:    ${link}
+                                        <br>View the full log:  ${log}
+                                        <br>View pipeline steps:    ${stageView}
+                                        <br>View in Blue Ocean:    ${blueOcean}
                                     """,
                                 cc: '',
                                 charset: 'UTF-8',
@@ -246,7 +378,7 @@ def call(rocProject project, boolean formatCheck, def dockerArray, def compileCo
                                 mimeType: 'text/html',
                                 replyTo: '',
                                 subject: "${project.name} ${env.BRANCH_NAME} build #${env.BUILD_NUMBER} status is ${currentBuild.result}",       
-                                to: "dl.${project.name}-ci@amd.com"
+                                to: recipient
                             )
                             
                             throw e
