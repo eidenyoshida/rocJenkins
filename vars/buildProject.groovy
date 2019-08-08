@@ -82,8 +82,16 @@ def call(rocProject project, boolean formatCheck, def dockerArray, def compileCo
                                 reason = "Problems building/running docker container, Permissions or dependency issues in container"
                             }
 
-                            currentBuild.result = 'FAILURE'
-                            throw e
+                            if(platform.jenkinsLabel.contains('hip-clang'))
+                            {
+                                //hip-clang is experimental for now
+                                currentBuild.result = 'UNSTABLE'
+                            }
+                            else
+                            {
+                                currentBuild.result = 'FAILURE'
+                                throw e
+                            } 
                         }
                     }
                     if (formatCheck && !platform.jenkinsLabel.contains('hip-clang'))
@@ -152,8 +160,17 @@ def call(rocProject project, boolean formatCheck, def dockerArray, def compileCo
                             {
                                 reason = "CMake/path issues, Broken/incompatible compiler, Permissions"
                             }
-                            currentBuild.result = 'FAILURE'
-                            throw e
+
+                            if(platform.jenkinsLabel.contains('hip-clang'))
+                            {
+                                //hip-clang is experimental for now
+                                currentBuild.result = 'UNSTABLE'
+                            }
+                            else
+                            {
+                                currentBuild.result = 'FAILURE'
+                                throw e
+                            }
                         }
                     }
                     if(testCommand != null)
@@ -191,8 +208,17 @@ def call(rocProject project, boolean formatCheck, def dockerArray, def compileCo
                                         reason = "Failed tests on ${gpu}"
                                     }
                                 }
-                                currentBuild.result = 'FAILURE'
-                                throw e
+
+                                if(platform.jenkinsLabel.contains('hip-clang'))
+                                {
+                                    //hip-clang is experimental for now
+                                    currentBuild.result = 'UNSTABLE'
+                                }
+                                else
+                                {
+                                    currentBuild.result = 'FAILURE'
+                                    throw e
+                                }
                             }
                         }
                     }
@@ -223,8 +249,17 @@ def call(rocProject project, boolean formatCheck, def dockerArray, def compileCo
                             {
                                 reason = "Trying to make a package in the incorrect directory"
                             }
-                            currentBuild.result = 'FAILURE'
-                            throw e
+
+                            if(platform.jenkinsLabel.contains('hip-clang'))
+                            {
+                                //hip-clang is experimental for now
+                                currentBuild.result = 'UNSTABLE'
+                            }
+                            else
+                            {
+                                currentBuild.result = 'FAILURE'
+                                throw e
+                            }
                         }
                     }
                     if(platform.jenkinsLabel.contains('centos'))
@@ -249,14 +284,59 @@ def call(rocProject project, boolean formatCheck, def dockerArray, def compileCo
                             duration = failTime-startTime
                             failedStage = stages[5]
                             reason = "Incorrect user/group permissions for Jenkins user"
+ 
                             currentBuild.result = 'FAILURE'
                             throw e
+                        }
+                    }
+                    if(platform.jenkinsLabel.contains('hip-clang') && currentBuild.result == 'UNSTABLE')
+                    {
+                        stage("${stages[6]}${platform.jenkinsLabel}")
+                        {
+                            if(env.BRANCH_NAME.contains('PR'))
+                            {
+                                link = "${env.JENKINS_URL}job/ROCmSoftwarePlatform/job/${project.name}/view/change-requests/job/${env.BRANCH_NAME}"
+                                log = "${env.JENKINS_URL}job/ROCmSoftwarePlatform/job/${project.name}/view/change-requests/job/${env.BRANCH_NAME}/${env.BUILD_NUMBER}/consoleText"
+                                stageView = "${env.JENKINS_URL}job/ROCmSoftwarePlatform/job/${project.name}/view/change-requests/job/${env.BRANCH_NAME}/${env.BUILD_NUMBER}/flowGraphTable"
+                                blueOcean = "${env.JENKINS_URL}blue/organizations/jenkins/ROCmSoftwarePlatform%2F${project.name}/detail/${env.BRANCH_NAME}/${env.BUILD_NUMBER}/pipeline"
+                            }
+                            else
+                            {
+                                link = "${env.JENKINS_URL}job/ROCmSoftwarePlatform/job/${project.name}/job/${env.BRANCH_NAME}"
+                                log = "${env.JENKINS_URL}job/ROCmSoftwarePlatform/job/${project.name}/job/${env.BRANCH_NAME}/${env.BUILD_NUMBER}/consoleText"
+                                stageView = "${env.JENKINS_URL}job/ROCmSoftwarePlatform/job/${project.name}/job/${env.BRANCH_NAME}/${env.BUILD_NUMBER}/flowGraphTable"              
+                                blueOcean = "${env.JENKINS_URL}blue/organizations/jenkins/ROCmSoftwarePlatform%2F${project.name}/detail/${env.BRANCH_NAME}/${env.BUILD_NUMBER}/pipeline"
+                            }
+                      
+                            stageTime = platform.timeFunction(duration)
+ 
+                            mail(
+                                bcc: '',
+                                body: """
+                                        Job: ${platform.jenkinsLabel}
+                                        <br>Failed Stage: ${failedStage}
+                                        <br>Time elapsed in Failed Stage: ${stageTime}
+                                        <br>Possible Reason(s): ${reason} 
+                                        <br>Node: ${env.NODE_NAME}
+                                        <br><br>View ${project.name} ${env.BRANCH_NAME}:    ${link}
+                                        <br>View the full log:  ${log}
+                                        <br>View pipeline steps:    ${stageView}
+                                        <br>View in Blue Ocean:    ${blueOcean}
+                                    """,
+                                cc: '',
+                                charset: 'UTF-8',
+                                from: 'dl.mlse.lib.jenkins@amd.com',
+                                mimeType: 'text/html',
+                                replyTo: '',
+                                subject: "${project.name} ${env.BRANCH_NAME} build #${env.BUILD_NUMBER} status is ${currentBuild.result}",       
+                                to: "akila.premachandra@amd.com"
+                            )
                         }
                     }
                 }
                 catch(e)
                 {
-                    if(currentBuild.result == 'FAILURE')
+                    if(!platform.jenkinsLabel.contains('hip-clang') && currentBuild.result == 'FAILURE')
                     { 
                         stage("${stages[6]}${platform.jenkinsLabel}")
                         {
@@ -300,6 +380,7 @@ def call(rocProject project, boolean formatCheck, def dockerArray, def compileCo
                                 subject: "${project.name} ${env.BRANCH_NAME} build #${env.BUILD_NUMBER} status is ${currentBuild.result}",       
                                 to: recipient
                             )
+                            
                             throw e
                         }
                     }
