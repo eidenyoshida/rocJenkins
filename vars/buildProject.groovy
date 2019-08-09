@@ -21,6 +21,7 @@ def call(rocProject project, boolean formatCheck, def dockerArray, def compileCo
     String reason
     String gpu
     String stageTime
+    String rocmBuildId
     int startTime = 0
     int compileTime = 0
     int compileEndTime = 0
@@ -46,8 +47,9 @@ def call(rocProject project, boolean formatCheck, def dockerArray, def compileCo
                             startTime = (int)System.currentTimeMillis().intdiv(1000)
                             timeout(time: project.timeout.docker, unit: 'HOURS')
                             {
+                                rocmBuildId = "${env.BRANCH_NAME}-${env.BUILD_NUMBER}"
+                                env.ROCM_BUILD_ID = rocmBuildId
                                 platform.executorNumber = env.EXECUTOR_NUMBER
-
                                 build.checkout(project.paths)
                         
                                 if(env.MULTI_GPU == '1')
