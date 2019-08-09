@@ -64,6 +64,10 @@ def call(rocProject project, boolean formatCheck, def dockerArray, def compileCo
                                 }
                                 echo platform.runArgs
                                 platform.buildImage(this)
+                                informationalCommand = """
+                                                        nproc
+                                                       """
+                                platform.runCommand(this, informationalCommand)
                             }
                         }
                         catch(e)

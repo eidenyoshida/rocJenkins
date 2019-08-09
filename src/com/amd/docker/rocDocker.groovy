@@ -28,16 +28,23 @@ class rocDocker implements Serializable
         stage.dir( paths.project_src_prefix )
         {
             def user_uid = stage.sh(script: 'id -u', returnStdout: true ).trim()
-            
+
+            def systemCPUs = stage.sh(script: 'nproc', returnStdout: true ).trim()
+            def CPUsPerExecutor = systemCPUs.toInteger() / (stage.env.NUMBER_OF_EXECUTORS).toInteger()
+            def containerCPUs_low = (stage.env.EXECUTOR_NUMBER).toInteger() * CPUsPerExecutor
+            def containerCPUs_high = containerCPUs_low + CPUsPerExecutor - 1
+            runArgs += " --cpuset-cpus=\"${containerCPUs_low}-${containerCPUs_high}\""       
+
             String imageLabel = jenkinsLabel.replaceAll("\\W","")
-            
+
             // Docker 17.05 introduced the ability to use ARG values in FROM statements
             // Docker inspect failing on FROM statements with ARG https://issues.jenkins-ci.org/browse/JENKINS-44836
-            stage.docker.build( "${paths.project_name}/${buildImageName}/${imageLabel}/${executorNumber}:latest", "--pull -f docker/${buildDockerfile} --build-arg user_uid=${user_uid} --build-arg base_image=${baseImage} .")
+            stage.docker.build( "${paths.project_name}/${buildImageName}/${imageLabel}/${executorNumber}:latest", 
+                               "--pull -f docker/${buildDockerfile} --build-arg user_uid=${user_uid} --build-arg base_image=${baseImage} --cpuset-cpus=\"${containerCPUs_low}-${containerCPUs_high}\" .")
 
             // JENKINS-44836 workaround by using a bash script instead of docker.build()
             //stage.sh "docker build -t ${paths.project_name}/${buildImageName}/${imageLabel}/${executorNumber}:latest -f docker/${buildDockerfile} ${buildArgs} --build-arg user_uid=${user_uid} --build-arg base_image=${baseImage} ."
-            
+
             image = stage.docker.image( "${paths.project_name}/${buildImageName}/${imageLabel}/${executorNumber}:latest" )
             
             // Print system information for the log
