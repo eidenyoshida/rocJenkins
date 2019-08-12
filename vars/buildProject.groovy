@@ -154,6 +154,7 @@ def call(rocProject project, boolean formatCheck, def dockerArray, def compileCo
                             {
                                 compileCommand.call(platform,project)
                                 compileEndTime = (int)System.currentTimeMillis().intdiv(1000)
+                            }
                         }
                         catch(e)
                         {
