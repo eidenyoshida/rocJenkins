@@ -19,7 +19,6 @@ def call(rocProject project, boolean formatCheck, def dockerArray, def compileCo
     String[] stages = ['Docker ', 'Format Check ', 'Compile ', 'Test ', 'Package ', 'Permissions ', 'Mail ']
     String failedStage
     String reason
-    String gpu
     String stageTime
     String rocmBuildId
     int startTime = 0
@@ -32,7 +31,6 @@ def call(rocProject project, boolean formatCheck, def dockerArray, def compileCo
     def action =
     {key ->
         def platform = dockerArray[key]
-        gpu = platform.gpuLabel(platform.jenkinsLabel)
         
         node (platform.jenkinsLabel)
         {
@@ -75,11 +73,15 @@ def call(rocProject project, boolean formatCheck, def dockerArray, def compileCo
                             failTime = (int)System.currentTimeMillis().intdiv(1000)
                             duration = failTime-startTime
                             failedStage = stages[0]
-                            if(duration <= 7)
+                            if(duration <= 15)
                             {
                                 reason = "Could not resolve host github.com, Git checkout/SCM failure"
                             }
-                            else if(duration >= project.timeout.docker*57)
+                            else if(duration >= 175 && duration <= 185)
+                            {
+                                reason = "Docker container could not be launched as system is low on memory"
+                            } 
+                            else if(duration >= project.timeout.docker*3420)
                             {
                                 reason = "Timeout due to loss of connection to the node, Authentication issues"
                             }
@@ -130,7 +132,14 @@ def call(rocProject project, boolean formatCheck, def dockerArray, def compileCo
                             failTime = (int)System.currentTimeMillis().intdiv(1000)
                             duration = failTime-startTime
                             failedStage = stages[1]
-                            reason = "Not running /opt/rocm/hcc/bin/clang-format with the latest ROCm release before committing code"
+                            if(duration >= 175 && duration <= 185)
+                            {
+                                reason = "Docker container could not be launched as system is low on memory"
+                            }
+                            else
+                            { 
+                                reason = "Not running /opt/rocm/hcc/bin/clang-format with the latest ROCm release before committing code"
+                            }
                             currentBuild.result = 'FAILURE'
                             throw e
                         }   
@@ -145,22 +154,24 @@ def call(rocProject project, boolean formatCheck, def dockerArray, def compileCo
                             {
                                 compileCommand.call(platform,project)
                                 compileEndTime = (int)System.currentTimeMillis().intdiv(1000)
-                                compileDuration = compileEndTime-compileTime
-                            }
                         }
                         catch(e)
                         {
                             compileEndTime = (int)System.currentTimeMillis().intdiv(1000)
-                            compileDuration = compileEndTime-compileTime
+                            duration = compileEndTime-compileTime
                             failedStage = stages[2]
 
-                            if(compileDuration >= project.timeout.compile*57)
+                            if(duration >= project.timeout.compile*3420)
                             {
                                 reason = "${project.name} build script timed out"
                             }
+                            else if(duration >= 175 && duration <= 185)
+                            {
+                                reason = "Docker container could not be launched as system is low on memory"
+                            } 
                             else if(project.name == 'Tensile')
                             {
-                                reason = "${project.name} host test failure(s) on ${gpu}"
+                                reason = "Lint or host test failures on ${platform.gpuLabel(platform.jenkinsLabel)}"
                             }
                             else
                             {
@@ -205,13 +216,17 @@ def call(rocProject project, boolean formatCheck, def dockerArray, def compileCo
                                 else
                                 {
                                     failedStage = stages[3]
-                                    if(duration >= project.timeout.test*57)
+                                    if(duration >= 175 && duration <= 185)
                                     {
-                                        reason = "Timeout due to stalled tests on ${gpu}"
+                                        reason = "Docker container could not be launched as system is low on memory"
+                                    } 
+                                    else if(duration >= project.timeout.test*3420)
+                                    {
+                                        reason = "Timeout due to stalled tests on ${platform.gpuLabel(platform.jenkinsLabel)}"
                                     }
                                     else
                                     {
-                                        reason = "Failed tests on ${gpu}"
+                                        reason = "Failed tests on ${platform.gpuLabel(platform.jenkinsLabel)} "
                                     }
                                 }
 
@@ -228,7 +243,7 @@ def call(rocProject project, boolean formatCheck, def dockerArray, def compileCo
                             }
                         }
                     }
-                    if(packageCommand != null && !platform.jenkinsLabel.contains('centos'))
+                    if(packageCommand != null)
                     {
                         try
                         {
@@ -251,6 +266,10 @@ def call(rocProject project, boolean formatCheck, def dockerArray, def compileCo
                             {
                                 reason = "CentOS-related packaging error"
                             }
+                            else if(duration >= 175 && duration <= 185)
+                            {
+                                reason = "Docker container could not be launched as system is low on memory"
+                            } 
                             else
                             {
                                 reason = "Trying to make a package in the incorrect directory"
@@ -289,8 +308,16 @@ def call(rocProject project, boolean formatCheck, def dockerArray, def compileCo
                             failTime = (int)System.currentTimeMillis().intdiv(1000)
                             duration = failTime-startTime
                             failedStage = stages[5]
-                            reason = "Incorrect user/group permissions for Jenkins user"
- 
+                            
+                            if(duration >= 175 && duration <= 185)
+                            {
+                                reason = "Docker container could not be launched as system is low on memory"
+                            }
+                            else
+                            { 
+                                reason = "Incorrect user/group permissions for Jenkins user"
+                            }
+
                             currentBuild.result = 'FAILURE'
                             throw e
                         }
@@ -352,7 +379,7 @@ def call(rocProject project, boolean formatCheck, def dockerArray, def compileCo
                                 log = "${env.JENKINS_URL}job/ROCmSoftwarePlatform/job/${project.name}/view/change-requests/job/${env.BRANCH_NAME}/${env.BUILD_NUMBER}/consoleText"
                                 stageView = "${env.JENKINS_URL}job/ROCmSoftwarePlatform/job/${project.name}/view/change-requests/job/${env.BRANCH_NAME}/${env.BUILD_NUMBER}/flowGraphTable" 
                                 blueOcean = "${env.JENKINS_URL}blue/organizations/jenkins/ROCmSoftwarePlatform%2F${project.name}/detail/${env.BRANCH_NAME}/${env.BUILD_NUMBER}/pipeline"
-                                recipient = "akila.premachandra@amd.com"
+                                recipient = "dl.rocjenkins-ci@amd.com"
                             }
                             else
                             {
