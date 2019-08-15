@@ -16,7 +16,7 @@ class dockerNodes implements Serializable
 {
     def dockerArray
 
-    dockerNodes(def jenkinsGPULabels = ['gfx900'], String rocmVersion = 'rocm26', rocProject prj)
+    dockerNodes(def jenkinsGPULabels = ['gfx900'], String rocmVersion = 'rocm27', rocProject prj)
     {
         
         dockerArray = [:]
@@ -47,7 +47,7 @@ class dockerNodes implements Serializable
             else if(it.contains('centos7'))
             {
                 dockerArray[it] = new rocDocker(
-                                baseImage: 'rocm/dev-centos-7:2.6',
+                                baseImage: 'rocm/dev-centos-7:2.7',
                                 buildDockerfile: 'dockerfile-build-centos',
                                 installDockerfile: 'dockerfile-install-centos',
                                 runArgs: baseRunArgs,
@@ -67,7 +67,7 @@ class dockerNodes implements Serializable
             else if(it.contains('hip-clang'))
             {
                 dockerArray[it] = new rocDocker(
-                                baseImage: 'amdkila/hip-clang:2.6',
+                                baseImage: 'amdkila/hip-clang:2.7',
                                 buildDockerfile: 'dockerfile-build-ubuntu-rock',
                                 installDockerfile: 'dockerfile-install-ubuntu',
                                 runArgs: baseRunArgs,
@@ -87,7 +87,7 @@ class dockerNodes implements Serializable
             else
             {
                 dockerArray[it] = new rocDocker(
-                                baseImage: 'rocm/dev-ubuntu-16.04:2.6',
+                                baseImage: 'rocm/dev-ubuntu-16.04:2.7',
                                 buildDockerfile: 'dockerfile-build-ubuntu-rock',
                                 installDockerfile: 'dockerfile-install-ubuntu',
                                 runArgs: baseRunArgs,
