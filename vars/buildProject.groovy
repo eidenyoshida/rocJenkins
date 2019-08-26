@@ -54,7 +54,7 @@ def call(rocProject project, boolean formatCheck, def dockerArray, def compileCo
                                 build.checkout(project.paths)
 				project.paths.construct_build_prefix()				
 				echo "Hello"
-				def common = load "./${project.paths.build_prefix}/.jenkins/Common.groovy"
+				def common = load "./${project.paths.project_build_prefix}/.jenkins/Common.groovy"
 				
 				if(env.MULTI_GPU == '1')
                                 {
