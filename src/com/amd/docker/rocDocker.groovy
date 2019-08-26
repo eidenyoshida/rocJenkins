@@ -22,25 +22,48 @@ class rocDocker implements Serializable
     def infoCommands   
     def image
     def paths
-        
+
+    String listCPUs(def lowerBound, def upperBound, def stage)
+    {
+        String cpuRange = ""
+        stage.dir( paths.project_src_prefix )
+        {
+            stage.sh(script: 'lstopo --only PU lstopo.txt --of console', returnStdout: false )    
+    
+            for(int id= lowerBound.toInteger(); id<= upperBound.toInteger(); id++)
+            {
+                cpuRange += stage.sh(script: "cat lstopo.txt | grep \"L#$id \" | awk \'{print \$3}\'| grep -o -E \"[0-9]+\" ", returnStdout: false ).trim()
+
+                if(id != upperBound.toInteger())
+                {
+                    cpuRange += ','
+                }
+            }
+        }
+        return cpuRange
+    }
+
     void buildImage(def stage)
     {           
         stage.dir( paths.project_src_prefix )
         {
             def user_uid = stage.sh(script: 'id -u', returnStdout: true ).trim()
-
+    
             def systemCPUs = stage.sh(script: 'nproc', returnStdout: true ).trim()
-            def CPUsPerExecutor = systemCPUs.toInteger() / (stage.env.NUMBER_OF_EXECUTORS).toInteger()
+            def CPUsPerExecutor = systemCPUs.toInteger().intdiv((stage.env.NUMBER_OF_EXECUTORS).toInteger())
             def containerCPUs_low = (stage.env.EXECUTOR_NUMBER).toInteger() * CPUsPerExecutor
             def containerCPUs_high = containerCPUs_low + CPUsPerExecutor - 1
-            runArgs += " --cpuset-cpus=\"${containerCPUs_low}-${containerCPUs_high}\""       
+            
+            String containerRange = listCPUs(containerCPUs_low,containerCPUs_high, stage)
+
+            runArgs += " --cpuset-cpus=\"${containerRange}\""       
 
             String imageLabel = jenkinsLabel.replaceAll("\\W","")
 
             // Docker 17.05 introduced the ability to use ARG values in FROM statements
             // Docker inspect failing on FROM statements with ARG https://issues.jenkins-ci.org/browse/JENKINS-44836
             stage.docker.build( "${paths.project_name}/${buildImageName}/${imageLabel}/${executorNumber}:latest", 
-                               "--pull -f docker/${buildDockerfile} --build-arg user_uid=${user_uid} --build-arg base_image=${baseImage} --cpuset-cpus=\"${containerCPUs_low}-${containerCPUs_high}\" .")
+                               "--pull -f docker/${buildDockerfile} --build-arg user_uid=${user_uid} --build-arg base_image=${baseImage} --cpuset-cpus=\"${containerRange}\" .")
 
             // JENKINS-44836 workaround by using a bash script instead of docker.build()
             //stage.sh "docker build -t ${paths.project_name}/${buildImageName}/${imageLabel}/${executorNumber}:latest -f docker/${buildDockerfile} ${buildArgs} --build-arg user_uid=${user_uid} --build-arg base_image=${baseImage} ."
