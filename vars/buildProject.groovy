@@ -54,7 +54,7 @@ def call(rocProject project, boolean formatCheck, def dockerArray, def compileCo
                                 build.checkout(project.paths)
 				
 				echo "Hello"
-				common = load './jenkins/Common.groovy'
+				def common = load './jenkins/Common.groovy'
 				
 				if(env.MULTI_GPU == '1')
                                 {
