@@ -53,7 +53,8 @@ def call(rocProject project, boolean formatCheck, def dockerArray, def compileCo
                                 platform.executorNumber = env.EXECUTOR_NUMBER
                                 build.checkout(project.paths)
 				
-                        	common = load './jenkins/Common.groovy'
+				echo "Hello"
+				common = load './jenkins/Common.groovy'
 				
 				if(env.MULTI_GPU == '1')
                                 {
