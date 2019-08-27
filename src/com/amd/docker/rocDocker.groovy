@@ -32,7 +32,7 @@ class rocDocker implements Serializable
     
             for(int id= lowerBound.toInteger(); id<= upperBound.toInteger(); id++)
             {
-                cpuRange += stage.sh(script: "cat lstopo.txt | grep \"L#$id \" | awk \'{print \$3}\'| grep -o -E \"[0-9]+\" ", returnStdout: false ).trim()
+                cpuRange += stage.sh(script: "cat lstopo.txt | grep \"L#$id \" | awk \'{print \$3}\'| grep -o -E \"[0-9]+\" ", returnStdout: true ).trim()
 
                 if(id != upperBound.toInteger())
                 {
