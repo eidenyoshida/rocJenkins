@@ -27,6 +27,7 @@ def call(rocProject project, boolean formatCheck, def dockerArray, def compileCo
     int compileDuration = 0
     int failTime = 0
     int duration = 0
+    def commonGroovy
     
     def action =
     {key ->
@@ -53,8 +54,8 @@ def call(rocProject project, boolean formatCheck, def dockerArray, def compileCo
                                 platform.executorNumber = env.EXECUTOR_NUMBER
                                 build.checkout(project.paths)
 				project.paths.construct_build_prefix()				
-				echo "Hello"
-				def common = load "./${project.paths.project_build_prefix}/.jenkins/Common.groovy"
+				
+				commonGroovy = load "./${project.paths.project_build_prefix}/.jenkins/Common.groovy"
 				
 				if(env.MULTI_GPU == '1')
                                 {
@@ -158,7 +159,8 @@ def call(rocProject project, boolean formatCheck, def dockerArray, def compileCo
                             
                             timeout(time: project.timeout.compile, unit: 'HOURS')
                             {
-                                compileCommand.call(platform,project)
+				//commonGroovy.compileCommand
+				commonGroovy.compileCommand.call(platform,project)
                                 compileEndTime = (int)System.currentTimeMillis().intdiv(1000)
                             }
                         }
