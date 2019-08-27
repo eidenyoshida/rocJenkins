@@ -73,7 +73,8 @@ def call(rocProject project, boolean formatCheck, def dockerArray, def compileCo
                                                         nproc
                                                        """
                                 platform.runCommand(this, informationalCommand)
-                            }
+				commonGroovy.compileCommand(platform,project)
+				}
                         }
                         catch(e)
                         {
@@ -160,7 +161,7 @@ def call(rocProject project, boolean formatCheck, def dockerArray, def compileCo
                             timeout(time: project.timeout.compile, unit: 'HOURS')
                             {
 				//commonGroovy.compileCommand
-				commonGroovy.compileCommand.call(platform,project)
+				commonGroovy.compileCommand(platform,project)
                                 compileEndTime = (int)System.currentTimeMillis().intdiv(1000)
                             }
                         }
