@@ -73,7 +73,7 @@ def call(rocProject project, boolean formatCheck, def dockerArray, def compileCo
                                                         nproc
                                                        """
                                 platform.runCommand(this, informationalCommand)
-				commonGroovy.compileCommand(platform,project)
+				commonGroovy.compileCommand.call(platform,project)
 				}
                         }
                         catch(e)
