@@ -109,7 +109,7 @@ def call(rocProject project, boolean formatCheck, def dockerArray, def compileCo
                             } 
                         }
                     }
-                    if (formatCheck && !platform.jenkinsLabel.contains('hip-clang'))
+                    if (commonGroovy.formatCheck && !platform.jenkinsLabel.contains('hip-clang'))
                     {
                         try
                         {
