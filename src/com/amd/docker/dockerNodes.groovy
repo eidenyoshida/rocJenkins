@@ -44,6 +44,46 @@ class dockerNodes implements Serializable
                                 jenkinsLabel: it + " && " + rocmVersion
                         )
             }
+            else if(it.contains('centos7') && it.contains('hip-clang'))
+            {
+                dockerArray[it] = new rocDocker(
+                                baseImage: 'amdkila/centos-hip-clang:2.7',
+                                buildDockerfile: 'dockerfile-build-centos',
+                                installDockerfile: 'dockerfile-install-centos',
+                                runArgs: baseRunArgs,
+                                buildArgs: '--pull',
+                                infoCommands: """
+                                                set -x 
+                                                /opt/rocm/bin/hipcc --version 
+                                                pwd 
+                                                dkms status
+                                            whoami
+                                            """,
+                                buildImageName:'build-' + prj.name.toLowerCase() + '-artifactory',
+                                paths: prj.paths,
+                                jenkinsLabel: it + " && " + rocmVersion
+                        )
+            }
+            else if(it.contains('ubuntu') && it.contains('hip-clang'))
+            {
+                dockerArray[it] = new rocDocker(
+                                baseImage: 'amdkila/hip-clang:2.7',
+                                buildDockerfile: 'dockerfile-build-ubuntu-rock',
+                                installDockerfile: 'dockerfile-install-ubuntu',
+                                runArgs: baseRunArgs,
+                                buildArgs: '--pull',
+                                infoCommands: """
+                                                set -x 
+                                                /opt/rocm/bin/hipcc --version 
+                                                pwd 
+                                                dkms status
+                                                whoami
+                                            """,
+                                buildImageName:'build-' + prj.name.toLowerCase() + '-artifactory',
+                                paths: prj.paths,
+                                jenkinsLabel: it + " && " + rocmVersion
+                        )
+            }
             else if(it.contains('centos7'))
             {
                 dockerArray[it] = new rocDocker(
@@ -64,27 +104,7 @@ class dockerNodes implements Serializable
                                 jenkinsLabel: it + " && " + rocmVersion
                         )
             }
-            else if(it.contains('hip-clang'))
-            {
-                dockerArray[it] = new rocDocker(
-                                baseImage: 'amdkila/hip-clang:2.7',
-                                buildDockerfile: 'dockerfile-build-ubuntu-rock',
-                                installDockerfile: 'dockerfile-install-ubuntu',
-                                runArgs: baseRunArgs,
-                                buildArgs: '--pull',
-                                infoCommands: """
-                                                set -x 
-                                                /opt/rocm/hip/bin/hipcc --version 
-                                                pwd 
-                                                dkms status
-                                                whoami
-                                            """,
-                                buildImageName:'build-' + prj.name.toLowerCase() + '-artifactory',
-                                paths: prj.paths,
-                                jenkinsLabel: it + " && " + rocmVersion
-                        )
-            }
-            else
+            else if(it.contains('ubuntu'))
             {
                 dockerArray[it] = new rocDocker(
                                 baseImage: 'rocm/dev-ubuntu-16.04:2.7',
