@@ -84,6 +84,26 @@ class dockerNodes implements Serializable
                                 jenkinsLabel: it + " && " + rocmVersion
                         )
             }
+            else if(it.contains('sles'))
+            {
+                dockerArray[it] = new rocDocker(
+                                baseImage: 'amdkila/sles15:2.7',
+                                buildDockerfile: 'dockerfile-build-sles',
+                                installDockerfile: 'dockerfile-install-sles',
+                                runArgs: baseRunArgs,
+                                buildArgs: '--pull',
+                                infoCommands: """
+                                                set -x 
+                                                /opt/rocm/bin/hcc --version 
+                                                pwd 
+                                                dkms status
+                                                whoami
+                                            """,
+                                buildImageName:'build-' + prj.name.toLowerCase() + '-artifactory',
+                                paths: prj.paths,
+                                jenkinsLabel: it + " && " + rocmVersion
+                        )
+            }
             else if(it.contains('centos7'))
             {
                 dockerArray[it] = new rocDocker(
