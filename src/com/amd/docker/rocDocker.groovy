@@ -74,7 +74,7 @@ class rocDocker implements Serializable
             image.inside( runArgs )
             {
                 // Temporary workaround to access GPU in sles container
-                if(jenkinsLabel.contains('sles'))
+                if(jenkinsLabel.contains('sles') || jenkinsLabel.contains('hip-clang'))
                 {
                     stage.sh(script: 'sudo chgrp -R video /dev/dri', returnStdout: false)
                 }

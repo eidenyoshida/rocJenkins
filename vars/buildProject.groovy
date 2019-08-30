@@ -288,35 +288,38 @@ def call(rocProject project, boolean formatCheck, def dockerArray, def compileCo
                             }
                         }
                     }
-                    stage ("${stages[5]}${platform.jenkinsLabel}")
-                    {
-                        try
+                    if(platform.jenkinsLabel.contains('centos') || platform.jenkinsLabel.contains('sles') || platform.jenkinsLabel.contains('hip-clang'))
+                    { 
+                        stage ("${stages[5]}${platform.jenkinsLabel}")
                         {
-                            timeout(time: project.timeout.docker, unit: 'HOURS')
+                            try
                             {
-                                startTime = (int)System.currentTimeMillis().intdiv(1000)
-                                permissionsCommand = "sudo chown jenkins -R ./*"
-                            
-                                platform.runCommand(this, permissionsCommand)
+                                timeout(time: project.timeout.docker, unit: 'HOURS')
+                                {
+                                    startTime = (int)System.currentTimeMillis().intdiv(1000)
+                                    permissionsCommand = "sudo chown jenkins -R ./*"
+                                
+                                    platform.runCommand(this, permissionsCommand)
+                                }
                             }
-                        }
-                        catch(e)
-                        {
-                            failTime = (int)System.currentTimeMillis().intdiv(1000)
-                            duration = failTime-startTime
-                            failedStage = stages[5]
-                            
-                            if(duration >= 175 && duration <= 185)
+                            catch(e)
                             {
-                                reason = "Docker container could not be launched as system is low on memory"
-                            }
-                            else
-                            { 
-                                reason = "Incorrect user/group permissions for Jenkins user"
-                            }
+                                failTime = (int)System.currentTimeMillis().intdiv(1000)
+                                duration = failTime-startTime
+                                failedStage = stages[5]
+                                
+                                if(duration >= 175 && duration <= 185)
+                                {
+                                    reason = "Docker container could not be launched as system is low on memory"
+                                }
+                                else
+                                { 
+                                    reason = "Incorrect user/group permissions for Jenkins user"
+                                }
 
-                            currentBuild.result = 'FAILURE'
-                            throw e
+                                currentBuild.result = 'FAILURE'
+                                throw e
+                            }
                         }
                     }
                     if(platform.jenkinsLabel.contains('hip-clang') && currentBuild.result == 'UNSTABLE')
