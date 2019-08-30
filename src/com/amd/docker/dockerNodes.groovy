@@ -55,6 +55,7 @@ class dockerNodes implements Serializable
                                 infoCommands: """
                                                 set -x 
                                                 /opt/rocm/bin/hipcc --version 
+                                                /opt/rocm/bin/rocm_agent_enumerator 
                                                 pwd 
                                                 dkms status
                                             whoami
@@ -75,6 +76,7 @@ class dockerNodes implements Serializable
                                 infoCommands: """
                                                 set -x 
                                                 /opt/rocm/bin/hipcc --version 
+                                                /opt/rocm/bin/rocm_agent_enumerator 
                                                 pwd 
                                                 dkms status
                                                 whoami
@@ -94,7 +96,8 @@ class dockerNodes implements Serializable
                                 buildArgs: '--pull',
                                 infoCommands: """
                                                 set -x 
-                                                /opt/rocm/bin/hcc --version 
+                                                /opt/rocm/bin/hcc --version
+                                                /opt/rocm/bin/rocm_agent_enumerator 
                                                 pwd 
                                                 dkms status
                                                 whoami
@@ -115,6 +118,7 @@ class dockerNodes implements Serializable
                                 infoCommands: """
                                                 set -x 
                                                 /opt/rocm/bin/hcc --version 
+                                                /opt/rocm/bin/rocm_agent_enumerator 
                                                 pwd 
                                                 dkms status
                                             whoami
@@ -135,6 +139,7 @@ class dockerNodes implements Serializable
                                 infoCommands: """
                                                 set -x 
                                                 /opt/rocm/bin/hcc --version 
+                                                /opt/rocm/bin/rocm_agent_enumerator 
                                                 pwd 
                                                 dkms status
                                             whoami

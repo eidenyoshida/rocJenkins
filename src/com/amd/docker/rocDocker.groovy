@@ -73,6 +73,11 @@ class rocDocker implements Serializable
             // Print system information for the log
             image.inside( runArgs )
             {
+                // Temporary workaround to access GPU in sles container
+                if(jenkinsLabel.contains('sles'))
+                {
+                    stage.sh(script: 'sudo chgrp -R video /dev/dri', returnStdout: false)
+                }
                 stage.sh(infoCommands)
             }
         }

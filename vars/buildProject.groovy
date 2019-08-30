@@ -263,7 +263,7 @@ def call(rocProject project, boolean formatCheck, def dockerArray, def compileCo
                             duration = failTime-startTime
                             failedStage = stages[4]
                     
-                            if(platform.jenkinsLabel.contains('centos'))
+                            if(platform.jenkinsLabel.contains('centos') || platform.jenkinsLabel.contains('sles'))
                             {
                                 reason = "CentOS-related packaging error"
                             }
@@ -288,20 +288,16 @@ def call(rocProject project, boolean formatCheck, def dockerArray, def compileCo
                             }
                         }
                     }
-                    if(platform.jenkinsLabel.contains('centos'))
+                    stage ("${stages[5]}${platform.jenkinsLabel}")
                     {
                         try
                         {
                             timeout(time: project.timeout.docker, unit: 'HOURS')
                             {
-                                //This is temporary until CentOS 7 images support GPU access for the Jenkins user
-                                stage ("${stages[5]}${platform.jenkinsLabel}")
-                                {
-                                    startTime = (int)System.currentTimeMillis().intdiv(1000)
-                                    permissionsCommand = "sudo chown jenkins -R ./*"
-                                
-                                    platform.runCommand(this, permissionsCommand)
-                                }
+                                startTime = (int)System.currentTimeMillis().intdiv(1000)
+                                permissionsCommand = "sudo chown jenkins -R ./*"
+                            
+                                platform.runCommand(this, permissionsCommand)
                             }
                         }
                         catch(e)
