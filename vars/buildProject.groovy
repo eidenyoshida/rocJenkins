@@ -231,7 +231,8 @@ def call(rocProject project, boolean formatCheck, def dockerArray, def compileCo
                                     }
                                 }
 
-                                if(platform.jenkinsLabel.contains('hip-clang'))
+                                if(platform.jenkinsLabel.contains('hip-clang') ||
+				   platform.jenkinsLabel.contains('sles'))
                                 {
                                     //hip-clang is experimental for now
                                     currentBuild.result = 'UNSTABLE'
@@ -322,7 +323,9 @@ def call(rocProject project, boolean formatCheck, def dockerArray, def compileCo
                             }
                         }
                     }
-                    if(platform.jenkinsLabel.contains('hip-clang') && currentBuild.result == 'UNSTABLE')
+                    if((platform.jenkinsLabel.contains('hip-clang')
+		        || platform.jenkinsLabel.contains('sles'))
+		    	&& currentBuild.result == 'UNSTABLE')
                     {
                         stage("${stages[6]}${platform.jenkinsLabel}")
                         {
@@ -349,7 +352,6 @@ def call(rocProject project, boolean formatCheck, def dockerArray, def compileCo
                                         Job: ${platform.jenkinsLabel}
                                         <br>Failed Stage: ${failedStage}
                                         <br>Time elapsed in Failed Stage: ${stageTime}
-                                        <br>Possible Reason(s): ${reason} 
                                         <br>Node: ${env.NODE_NAME}
                                         <br><br>View ${project.name} ${env.BRANCH_NAME}:    ${link}
                                         <br>View the full log:  ${log}
@@ -369,7 +371,7 @@ def call(rocProject project, boolean formatCheck, def dockerArray, def compileCo
                 }
                 catch(e)
                 {
-                    if(!platform.jenkinsLabel.contains('hip-clang') && currentBuild.result == 'FAILURE')
+                    if((!platform.jenkinsLabel.contains('hip-clang') || !platform.jenkinsLabel.contains('sles')) && currentBuild.result == 'FAILURE')
                     { 
                         stage("${stages[6]}${platform.jenkinsLabel}")
                         {
@@ -398,7 +400,6 @@ def call(rocProject project, boolean formatCheck, def dockerArray, def compileCo
                                         Job: ${platform.jenkinsLabel}
                                         <br>Failed Stage: ${failedStage}
                                         <br>Time elapsed in Failed Stage: ${stageTime}
-                                        <br>Possible Reason(s): ${reason} 
                                         <br>Node: ${env.NODE_NAME}
                                         <br><br>View ${project.name} ${env.BRANCH_NAME}:    ${link}
                                         <br>View the full log:  ${log}
