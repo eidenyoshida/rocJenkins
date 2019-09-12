@@ -4,8 +4,8 @@
 
 package com.amd.project
 
+//import com.amd.project.*
 import com.amd.project.project_paths
-import com.amd.mail.*
 //import com.amd.project.compiler_data
 
 import java.nio.file.Path
@@ -14,21 +14,18 @@ class rocProject implements Serializable
 {
     def paths
     def compiler
-    def timeout
-    def email
     String name
     String testDirectory = 'build/release'
- 
+  
+    def timeout
+    
     class timeoutData
     {
-        int permissions = 1
-        int format = 3
-        int packaging = 15
-        int docker = 60
-        int compile = 120
-        int test = 300
+          int docker = 2
+	      int compile = 2
+	      int test = 5
     }
-   
+    
     rocProject(String name)
     {
         this.name = name
@@ -36,6 +33,5 @@ class rocProject implements Serializable
             project_name: name.toLowerCase())
         compiler = new compiler_data()
         timeout = new timeoutData()
-        email = new emailFunctions()
     }
 }
