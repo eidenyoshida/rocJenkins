@@ -81,3 +81,31 @@ void build_directory_rel( project_paths paths, compiler_data hcc_args )
     //   }
     paths.project_build_prefix = paths.build_prefix + '/' + paths.project_name;
 }
+
+////////////////////////////////////////////////////////////////////////
+// Install latest package for any project from CI 
+String getLibrary( String projectName, String os, String branchName, boolean sudo = false)
+{
+    String permissions = ''
+    String packageType
+    String packageManager
+
+    if(sudo == true) permissions = 'sudo'
+    
+    if(os == 'ubuntu' || os == 'debian')
+    {
+        packageType  = 'deb' 
+        packageManager = 'dpkg'
+    }
+    else
+    {
+        packageType = 'rpm'
+        packageManager = 'rpm --replacefiles'
+    }
+
+    return """
+            ${permissions} wget http://10.216.151.18:8080/job/ROCmSoftwarePlatform/job/${projectName}/job/${branchName}/lastSuccessfulBuild/artifact/*zip*/archive.zip
+            ${permissions} unzip archive.zip
+            ${permissions} ${packageManager} -i archive/*/*/*/*/*/*.${packageType}
+        """
+}
