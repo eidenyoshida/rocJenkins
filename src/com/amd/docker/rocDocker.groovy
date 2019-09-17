@@ -98,7 +98,56 @@ class rocDocker implements Serializable
             stage.archiveArtifacts artifacts: artifactName, fingerprint: true
         }
     }
+
+    def makePackage(String label, String directory, boolean clientPackaging = false, boolean sudo = false)
+    {
+        String permissions = ''
+        String query = ":"
+        String client = ":"
+        String fileType
+        
+        if(label.contains('ubuntu') || label.contains('debian'))
+        {
+            fileType = 'deb'
+        }
+        else
+        {
+            fileType = 'rpm'
+        }
     
+        if(sudo == true) permissions = 'sudo'
+
+        if(clientPackaging == true)
+        {
+            client = """
+                    ${permissions} make package_clients
+                    ${permissions} mv clients/*.${fileType} package/
+                """
+        }
+
+        if(fileType == 'rpm')
+        {
+            query = "${permissions} ${fileType} -qlp package/*.${fileType}"
+        }
+        else
+        {
+            query = "${permissions} dpkg -c package/*.deb"
+        }
+        
+        def command = """
+                    set -x
+                    cd ${directory}
+                    ${permissions} make package
+                    ${permissions} mkdir -p package
+                    ${permissions} mv *.${fileType} package/
+                    ${query}
+                    ${client}
+                """
+
+        return [command, "${directory}/package/*.${fileType}"]
+    }
+    
+
 /*    
     void UploadDockerHub(String RemoteOrg)
     {

@@ -109,3 +109,12 @@ String getLibrary( String projectName, String os, String branchName, boolean sud
             ${permissions} ${packageManager} -i archive/*/*/*/*/*/*.${packageType}
         """
 }
+
+////////////////////////////////////////////////////////////////////////
+// Adds sudo based on label 
+String sudo( String label)
+{
+    boolean needSudo = label.contains('hip-clang') || label.contains('sles') || label.contains('centos')     
+    if(needSudo) return 'sudo'
+    return ''
+}
