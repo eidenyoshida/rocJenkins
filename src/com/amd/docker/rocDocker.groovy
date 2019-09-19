@@ -99,7 +99,7 @@ class rocDocker implements Serializable
         }
     }
 
-    def makePackage(String label, String directory, boolean clientPackaging = false, boolean sudo = false)
+    def makePackage(String label, String directory, boolean clientPackaging = false, boolean sudo = false, boolean dependentPackage = false, String projectName = null, String branchName = null)
     {
         String permissions = ''
         String query = ":"
@@ -143,6 +143,13 @@ class rocDocker implements Serializable
                     ${query}
                     ${client}
                 """
+        
+        if(dependentPackage == true)
+        {
+            String secondaryPackage = auxiliary.getLibrary(projectName, label, branchName, true)
+            return [command, "${directory}/package/*.${fileType}", secondaryPackage]
+             
+        }
 
         return [command, "${directory}/package/*.${fileType}"]
     }

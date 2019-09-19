@@ -10,14 +10,14 @@ import java.nio.file.Path;
 import hudson.*
 import jenkins.*
 
-def call(rocProject project, boolean formatCheck, def dockerArray, def compileCommand, def testCommand, def packageCommand)
+def call(rocProject project, boolean formatCheck, def dockerArray, def compileCommand, def testCommand, def packageCommand, def rocblasCompileCommand= null, def rocblasTestCommand= null)
 {
     String link
     String log
     String stageView
     String blueOcean
     String recipient
-    String[] stages = ['Docker ', 'Format Check ', 'Compile ', 'Test ', 'Package ', 'Permissions ', 'Mail ']
+    String[] stages = ['Docker ', 'Format Check ', 'Compile ', 'Test ', 'Package ', 'Permissions ', 'Mail ', 'Build rocBLAS ', 'Test rocBLAS ']
     String failedStage
     String lastBuildResult = null
     String stageTime
@@ -233,6 +233,46 @@ def call(rocProject project, boolean formatCheck, def dockerArray, def compileCo
                                 duration = project.email.stop(startTime)
                                 failedStage = stages[5]
                                 currentBuild.result = 'FAILURE'
+                                throw e
+                            }
+                        }
+                    }
+                    if(rocblasCompileCommand != null)
+                    {
+                        stage("${stages[7]}${platform.jenkinsLabel}")
+                        {
+                            try
+                            {
+                                timeout(time: project.timeout.compile, unit: 'MINUTES')
+                                {
+                                    startTime = project.email.start()
+                                    rocblasCompileCommand.call(platform, project) 
+                                }
+                            } 
+                            catch(Exception e)
+                            {
+                                duration = project.email.stop(startTime)
+                                failedStage = stages[7]
+                                throw e
+                            }
+                        }
+                    }
+                    if(rocblasTestCommand != null)
+                    {
+                        stage("${stages[8]}${platform.jenkinsLabel}")
+                        {
+                            try
+                            {
+                                timeout(time: project.timeout.test, unit: 'MINUTES')
+                                {
+                                    startTime = project.email.start()
+                                    rocblasTestCommand.call(platform, project) 
+                                }
+                            } 
+                            catch(Exception e)
+                            {
+                                duration = project.email.stop(startTime)
+                                failedStage = stages[8]
                                 throw e
                             }
                         }
