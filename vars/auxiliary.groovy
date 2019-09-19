@@ -84,7 +84,7 @@ void build_directory_rel( project_paths paths, compiler_data hcc_args )
 
 ////////////////////////////////////////////////////////////////////////
 // Install latest package for any project from CI 
-String getLibrary( String projectName, String os, String branchName, boolean sudo = false)
+String getLibrary( String projectName, String label, String branchName, boolean sudo = false)
 {
     String permissions = ''
     String packageType
@@ -92,7 +92,7 @@ String getLibrary( String projectName, String os, String branchName, boolean sud
 
     if(sudo == true) permissions = 'sudo'
     
-    if(os == 'ubuntu' || os == 'debian')
+    if(label.contains('ubuntu') || label.contains('debian'))
     {
         packageType  = 'deb' 
         packageManager = 'dpkg'
