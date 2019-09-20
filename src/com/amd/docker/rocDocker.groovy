@@ -62,13 +62,13 @@ class rocDocker implements Serializable
 
             // Docker 17.05 introduced the ability to use ARG values in FROM statements
             // Docker inspect failing on FROM statements with ARG https://issues.jenkins-ci.org/browse/JENKINS-44836
-            stage.docker.build( "${paths.project_name}/${buildImageName}/${imageLabel}/${executorNumber}:latest", 
+            stage.docker.build( "${paths.project_name}/${buildImageName}/${imageLabel}:latest", 
                                "--pull -f docker/${buildDockerfile} --build-arg user_uid=${user_uid} --build-arg base_image=${baseImage} --cpuset-cpus=\"${containerRange}\" .")
 
             // JENKINS-44836 workaround by using a bash script instead of docker.build()
-            //stage.sh "docker build -t ${paths.project_name}/${buildImageName}/${imageLabel}/${executorNumber}:latest -f docker/${buildDockerfile} ${buildArgs} --build-arg user_uid=${user_uid} --build-arg base_image=${baseImage} ."
+            //stage.sh "docker build -t ${paths.project_name}/${buildImageName}/${imageLabel}:latest -f docker/${buildDockerfile} ${buildArgs} --build-arg user_uid=${user_uid} --build-arg base_image=${baseImage} ."
 
-            image = stage.docker.image( "${paths.project_name}/${buildImageName}/${imageLabel}/${executorNumber}:latest" )
+            image = stage.docker.image( "${paths.project_name}/${buildImageName}/${imageLabel}:latest" )
             
             // Print system information for the log
             image.inside( runArgs )
@@ -99,7 +99,7 @@ class rocDocker implements Serializable
         }
     }
 
-    def makePackage(String label, String directory, boolean clientPackaging = false, boolean sudo = false, boolean dependentPackage = false, String projectName = null, String branchName = null)
+    def makePackage(String label, String directory, boolean clientPackaging = false, boolean sudo = false) 
     {
         String permissions = ''
         String query = ":"
@@ -144,13 +144,6 @@ class rocDocker implements Serializable
                     ${client}
                 """
         
-        if(dependentPackage == true)
-        {
-            String secondaryPackage = auxiliary.getLibrary(projectName, label, branchName, true)
-            return [command, "${directory}/package/*.${fileType}", secondaryPackage]
-             
-        }
-
         return [command, "${directory}/package/*.${fileType}"]
     }
     
