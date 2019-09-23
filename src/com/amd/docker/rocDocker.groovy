@@ -193,26 +193,28 @@ class rocDocker implements Serializable
 /*    
     void UploadDockerHub(String RemoteOrg)
     {
-    // Do not treat failures to push to docker-hub as a build fail
-    try
-    {
-        sh  """#!/usr/bin/env bash
-          set -x
-          echo inside sh
-          docker tag ${local_org}/${image_name} ${remote_org}/${image_name
-        """
-
-        docker_hub_image = image( "${remote_org}/${image_name}" )
-
-        docker.withRegistry('https://registry.hub.docker.com', 'docker-hub-cred' )
+        // Do not treat failures to push to docker-hub as a build fail
+        try
         {
-        docker_hub_image.push( "${env.BUILD_NUMBER}" )
-        docker_hub_image.push( 'latest' )
+            sh  """#!/usr/bin/env bash
+                set -x
+                echo inside sh
+                docker tag ${local_org}/${image_name} ${remote_org}/${image_name
+            """
+
+            docker_hub_image = image( "${remote_org}/${image_name}" )
+
+            docker.withRegistry('https://registry.hub.docker.com', 'docker-hub-cred' )
+            {
+                docker_hub_image.push( "${env.BUILD_NUMBER}" )
+                docker_hub_image.push( 'latest' )
+            }
+            }
+        }
+        catch( err )
+        {
+            currentBuild.result = 'SUCCESS'
         }
     }
-    catch( err )
-    {
-        currentBuild.result = 'SUCCESS'
-    }
-    }
 */
+}
