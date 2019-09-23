@@ -178,7 +178,7 @@ class rocDocker implements Serializable
         if(label.contains('centos')) sudo = 'sudo'
         if(testType == 'checkin')        
         {
-            sscal = "LD_LIBRARY_PATH=/opt/rocm/${ld} ${sudo} ./example-sscal
+            sscal = "LD_LIBRARY_PATH=/opt/rocm/${ld} ${sudo} ./example-sscal"
             filter = 'quick*:*pre_'
         }
 
