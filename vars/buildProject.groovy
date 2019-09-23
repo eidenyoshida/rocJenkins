@@ -17,7 +17,7 @@ def call(rocProject project, boolean formatCheck, def dockerArray, def compileCo
     String stageView
     String blueOcean
     String recipient
-    String[] stages = ['Docker ', 'Format Check ', 'Compile ', 'Test ', 'Package ', 'Permissions ', 'Mail ', 'Build rocBLAS ', 'Test rocBLAS ']
+    String[] stages = ['Docker ', 'Format Check ', 'Compile ', 'Test ', 'Package ', 'Permissions ', 'Mail ', 'RocBLAS Compile ', 'RocBLAS Test ']
     String failedStage
     String lastBuildResult = null
     String stageTime
@@ -237,44 +237,54 @@ def call(rocProject project, boolean formatCheck, def dockerArray, def compileCo
                             }
                         }
                     }
-                    if(rocblasCompileCommand != null)
-                    {
-                        stage("${stages[7]}${platform.jenkinsLabel}")
+                    stage ("${stages[7]}${platform.jenkinsLabel}")
+                    {  
+                        try 
                         {
-                            try
+                            compileTime = project.email.start()
+                            timeout(time: project.timeout.compile, unit: 'MINUTES')
                             {
-                                timeout(time: project.timeout.compile, unit: 'MINUTES')
-                                {
-                                    startTime = project.email.start()
-                                    rocblasCompileCommand.call(platform, project) 
-                                }
-                            } 
-                            catch(Exception e)
-                            {
-                                duration = project.email.stop(startTime)
-                                failedStage = stages[7]
-                                throw e
+                                rocblasCompileCommand.call(platform,project)
+                                rocblasCompileDuration = project.email.stop(compileTime)
                             }
                         }
-                    }
-                    if(rocblasTestCommand != null)
-                    {
-                        stage("${stages[8]}${platform.jenkinsLabel}")
+                        catch(Exception e)
                         {
-                            try
-                            {
-                                timeout(time: project.timeout.test, unit: 'MINUTES')
-                                {
-                                    startTime = project.email.start()
-                                    rocblasTestCommand.call(platform, project) 
-                                }
-                            } 
-                            catch(Exception e)
-                            {
-                                duration = project.email.stop(startTime)
-                                failedStage = stages[8]
-                                throw e
+                            duration = project.email.stop(compileTime)
+                            failedStage = stages[7]
+                            currentBuild.result = 'FAILURE'
+                            throw e
+                        }
+                    }
+                    stage ("${stages[8]}${platform.jenkinsLabel}")
+                    {
+                        try
+                        {
+                            startTime = project.email.start()
+                            timeout(time: project.timeout.test, unit: 'MINUTES')
+                            {   
+                                rocblasTestCommand.call(platform, project)
                             }
+                        }
+                        catch(Exception e)
+                        {        
+                            duration = project.email.stop(startTime)
+                            failedStage = stages[8]
+                            if(duration <= 60)
+                            {
+                                failedStage = stages[7]
+                                duration = compileDuration
+                            }
+                            if(platform.jenkinsLabel.contains('hip-clang') || platform.jenkinsLabel.contains('sles'))
+                            {
+                                //hip-clang and sles are experimental for now
+                                currentBuild.result = 'UNSTABLE'
+                            }
+                            else
+                            {
+                                currentBuild.result = 'FAILURE'
+                            }
+                            throw e
                         }
                     }
                     stage("${stages[6]}${platform.jenkinsLabel}")

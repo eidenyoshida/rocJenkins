@@ -147,6 +147,48 @@ class rocDocker implements Serializable
         return [command, "${directory}/package/*.${fileType}"]
     }
     
+    def buildRocblas(String directory, String label)
+    {
+        String compiler = 'hcc'
+        String ld = 'hcc/lib'
+        String buildCommand = './install.sh -lasm_ci -c'
+
+        if(label.contains('hip-clang')) 
+        {
+            compiler = 'hipcc'
+            ld = 'lib'
+            buildCommand += ' --hip-clang'
+        }
+
+        return """#!/usr/bin/env bash
+                set -x
+                cd ${directory}/../rocblas
+                LD_LIBRARY_PATH=/opt/rocm/${ld} CXX=/opt/rocm/bin/${compiler} ${buildCommand} -t${directory}
+            """
+    }
+
+    def testRocblas(String testType, String directory, String label)
+    {
+        String sudo = ''
+        String ld = 'hcc/lib'
+        String filter = ''
+        String sscal = ":"
+
+        if(label.contains('hip-clang') ld = 'lib'
+        if(label.contains('centos') sudo = 'sudo'
+        if(testType == 'checkin')        
+        {
+            sscal = "LD_LIBRARY_PATH=/opt/rocm/${ld} ${sudo} ./example-sscal
+            filter = 'quick*:*pre_'
+        }
+
+        return """#!/usr/bin/env bash
+                set -x
+                cd ${directory}
+                ${sscal}
+                LD_LIBRARY_PATH=/opt/rocm/${ld} GTEST_LISTENER=NO_PASS_LINE_IN_LOG ${sudo} ./rocblas-test --gtest_output=xml --gtest_color=yes --gtest_filter=*${filter}${testType}*-*known_bug* #--gtest_filter=*${testType}*
+            """
+    }
 
 /*    
     void UploadDockerHub(String RemoteOrg)
@@ -157,7 +199,7 @@ class rocDocker implements Serializable
         sh  """#!/usr/bin/env bash
           set -x
           echo inside sh
-          docker tag ${local_org}/${image_name} ${remote_org}/${image_name}
+          docker tag ${local_org}/${image_name} ${remote_org}/${image_name
         """
 
         docker_hub_image = image( "${remote_org}/${image_name}" )
@@ -174,4 +216,3 @@ class rocDocker implements Serializable
     }
     }
 */
-}

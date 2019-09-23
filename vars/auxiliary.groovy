@@ -117,8 +117,5 @@ String sudo( String label)
     boolean needSudo = label.contains('hip-clang') || label.contains('sles') || label.contains('centos')     
     if(needSudo) return 'sudo'
     return ''
-}
-
-////////////////////////////////////////////////////////////////////////
-// Returns the github username and branch based on what's stored in tensile_fork.txt 
+} 
 
