@@ -174,8 +174,8 @@ class rocDocker implements Serializable
         String filter = ''
         String sscal = ":"
 
-        if(label.contains('hip-clang') ld = 'lib'
-        if(label.contains('centos') sudo = 'sudo'
+        if(label.contains('hip-clang')) ld = 'lib'
+        if(label.contains('centos')) sudo = 'sudo'
         if(testType == 'checkin')        
         {
             sscal = "LD_LIBRARY_PATH=/opt/rocm/${ld} ${sudo} ./example-sscal
