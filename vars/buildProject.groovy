@@ -124,31 +124,34 @@ def call(rocProject project, boolean formatCheck, def dockerArray, def compileCo
                             throw e
                         }   
                     }
-                    stage ("${stages[2]}${platform.jenkinsLabel}")
-                    {  
-                        try 
-                        {
-                            compileTime = project.email.start()
-                            timeout(time: project.timeout.compile, unit: 'MINUTES')
+                    if(compileCommand != null)
+                    {
+                        stage ("${stages[2]}${platform.jenkinsLabel}")
+                        {  
+                            try 
                             {
-                                compileCommand.call(platform,project)
-                                compileDuration = project.email.stop(compileTime)
+                                compileTime = project.email.start()
+                                timeout(time: project.timeout.compile, unit: 'MINUTES')
+                                {
+                                    compileCommand.call(platform,project)
+                                    compileDuration = project.email.stop(compileTime)
+                                }
                             }
-                        }
-                        catch(Exception e)
-                        {
-                            duration = project.email.stop(compileTime)
-                            failedStage = stages[2]
-                            if(platform.jenkinsLabel.contains('hip-clang') || platform.jenkinsLabel.contains('sles'))
+                            catch(Exception e)
                             {
-                                //hip-clang and sles are experimental for now
-                                currentBuild.result = 'UNSTABLE'
+                                duration = project.email.stop(compileTime)
+                                failedStage = stages[2]
+                                if(platform.jenkinsLabel.contains('hip-clang') || platform.jenkinsLabel.contains('sles'))
+                                {
+                                    //hip-clang and sles are experimental for now
+                                    currentBuild.result = 'UNSTABLE'
+                                }
+                                else
+                                {
+                                    currentBuild.result = 'FAILURE'
+                                }
+                                throw e
                             }
-                            else
-                            {
-                                currentBuild.result = 'FAILURE'
-                            }
-                            throw e
                         }
                     }
                     if(testCommand != null)
