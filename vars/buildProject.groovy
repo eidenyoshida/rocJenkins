@@ -37,7 +37,7 @@ def call(rocProject project, boolean formatCheck, def dockerArray, def compileCo
             {
                 try
                 {
-                    stage ("${project.name} ${stages[0]}${platform.jenkinsLabel}") 
+                    stage ("${project.name} && ${stages[0]}${platform.jenkinsLabel}") 
                     {
                         try
                         {
@@ -92,7 +92,7 @@ def call(rocProject project, boolean formatCheck, def dockerArray, def compileCo
                     {
                         try
                         {
-                            stage ("${project.name} ${stages[1]}${platform.jenkinsLabel}")
+                            stage ("${project.name} && ${stages[1]}${platform.jenkinsLabel}")
                             {
                                 timeout(time: project.timeout.format, unit: 'MINUTES')
                                 {
@@ -124,7 +124,7 @@ def call(rocProject project, boolean formatCheck, def dockerArray, def compileCo
                             throw e
                         }   
                     }
-                    stage ("${project.name} ${stages[2]}${platform.jenkinsLabel}")
+                    stage ("${project.name} && ${stages[2]}${platform.jenkinsLabel}")
                     {  
                         try 
                         {
@@ -153,7 +153,7 @@ def call(rocProject project, boolean formatCheck, def dockerArray, def compileCo
                     }
                     if(testCommand != null)
                     {
-                        stage ("${project.name} ${stages[3]}${platform.jenkinsLabel}")
+                        stage ("${project.name} && ${stages[3]}${platform.jenkinsLabel}")
                         {
                             try
                             {
@@ -192,7 +192,7 @@ def call(rocProject project, boolean formatCheck, def dockerArray, def compileCo
                         {
                             timeout(time: project.timeout.packaging, unit: 'MINUTES')
                             {
-                                stage ("${project.name} ${stages[4]}${platform.jenkinsLabel}")
+                                stage ("${project.name} && ${stages[4]}${platform.jenkinsLabel}")
                                 {
                                     startTime = project.email.start()
                                     packageCommand.call(platform, project)
