@@ -99,12 +99,13 @@ class rocDocker implements Serializable
         }
     }
 
-    def makePackage(String label, String directory, boolean clientPackaging = false, boolean sudo = false)
+    def makePackage(String label, String directory, boolean clientPackaging = false, boolean sudo = false, String secondaryPackage = null)
     {
         String permissions = ''
         String query = ":"
         String client = ":"
         String fileType
+        String dependentPackage = ":" 
         
         if(label.contains('ubuntu') || label.contains('debian'))
         {
@@ -114,9 +115,8 @@ class rocDocker implements Serializable
         {
             fileType = 'rpm'
         }
-    
+    	
         if(sudo == true) permissions = 'sudo'
-
         if(clientPackaging == true)
         {
             client = """
@@ -133,10 +133,16 @@ class rocDocker implements Serializable
         {
             query = "${permissions} dpkg -c package/*.deb"
         }
+
+        if(secondaryPackage != null)
+        {
+            dependentPackage = secondaryPackage
+        }
         
         def command = """
                     set -x
                     cd ${directory}
+                    ${dependentPackage}
                     ${permissions} make package
                     ${permissions} mkdir -p package
                     ${permissions} mv *.${fileType} package/
