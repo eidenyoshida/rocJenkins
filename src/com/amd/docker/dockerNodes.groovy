@@ -20,7 +20,7 @@ class dockerNodes implements Serializable
     {
         
         dockerArray = [:]
-        String baseRunArgs = '--device=/dev/kfd --group-add=video --blkio-weight=20'
+        String baseRunArgs = '--device=/dev/kfd --group-add=video --blkio-weight=20 --security-opt seccomp=unconfined'
         
         jenkinsGPULabels.each
         {
