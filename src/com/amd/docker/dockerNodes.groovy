@@ -89,7 +89,7 @@ class dockerNodes implements Serializable
             else if(it.contains('sles'))
             {
                 dockerArray[it] = new rocDocker(
-                                baseImage: 'amdkila/sles15:2.7',
+                                baseImage: 'amdkila/sles15:2.8',
                                 buildDockerfile: 'dockerfile-build-sles',
                                 installDockerfile: 'dockerfile-install-sles',
                                 runArgs: baseRunArgs,
