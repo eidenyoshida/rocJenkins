@@ -76,7 +76,7 @@ def call(rocProject project, boolean formatCheck, def dockerArray, def compileCo
                         {
                             duration = project.email.stop(startTime)
                             failedStage = stages[0]
-                            if(platform.jenkinsLabel.contains('hip-clang') || platform.jenkinsLabel.contains('sles'))
+                            if(platform.jenkinsLabel.contains('hip-clang') || platform.jenkinsLabel.contains('sles') || platform.jenkinsLabel.contains('gfx906'))
                             {
                                 //hip-clang and sles are experimental for now
                                 currentBuild.result = 'UNSTABLE'
@@ -139,7 +139,7 @@ def call(rocProject project, boolean formatCheck, def dockerArray, def compileCo
                         {
                             duration = project.email.stop(compileTime)
                             failedStage = stages[2]
-                            if(platform.jenkinsLabel.contains('hip-clang') || platform.jenkinsLabel.contains('sles'))
+                            if(platform.jenkinsLabel.contains('hip-clang') || platform.jenkinsLabel.contains('sles') || platform.jenkinsLabel.contains('gfx906'))
                             {
                                 //hip-clang and sles are experimental for now
                                 currentBuild.result = 'UNSTABLE'
@@ -173,7 +173,7 @@ def call(rocProject project, boolean formatCheck, def dockerArray, def compileCo
                                     duration = compileDuration
                                 }
 
-                                if(platform.jenkinsLabel.contains('hip-clang') || platform.jenkinsLabel.contains('sles'))
+                                if(platform.jenkinsLabel.contains('hip-clang') || platform.jenkinsLabel.contains('sles') || platform.jenkinsLabel.contains('gfx906'))
                                 {
                                     //hip-clang and sles are experimental for now
                                     currentBuild.result = 'UNSTABLE'
