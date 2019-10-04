@@ -131,7 +131,7 @@ class dockerNodes implements Serializable
             else if(it.contains('ubuntu'))
             {
                 dockerArray[it] = new rocDocker(
-                                baseImage: 'rocm/dev-ubuntu-16.04:2.8',
+                                baseImage: 'amdkila/ubuntu:2.9',
                                 buildDockerfile: 'dockerfile-build-ubuntu-rock',
                                 installDockerfile: 'dockerfile-install-ubuntu',
                                 runArgs: baseRunArgs,
