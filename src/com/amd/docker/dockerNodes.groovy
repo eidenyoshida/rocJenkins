@@ -110,7 +110,7 @@ class dockerNodes implements Serializable
             else if(it.contains('centos7'))
             {
                 dockerArray[it] = new rocDocker(
-                                baseImage: 'rocm/dev-centos-7:2.8',
+                                baseImage: 'amdkila/centos7:2.9',
                                 buildDockerfile: 'dockerfile-build-centos',
                                 installDockerfile: 'dockerfile-install-centos',
                                 runArgs: baseRunArgs,
