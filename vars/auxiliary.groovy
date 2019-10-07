@@ -115,6 +115,6 @@ String getLibrary( String projectName, String label, String branchName, boolean 
 String sudo( String label)
 {
     boolean needSudo = label.contains('hip-clang') || label.contains('sles') || label.contains('centos')     
-    if(needSudo) return 'sudo'
+    if(needSudo) return '/usr/bin/sudo --preserve-env '
     return ''
 }
