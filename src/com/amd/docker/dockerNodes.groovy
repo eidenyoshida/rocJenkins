@@ -47,7 +47,7 @@ class dockerNodes implements Serializable
             else if(it.contains('centos7') && it.contains('hip-clang'))
             {
                 dockerArray[it] = new rocDocker(
-                                baseImage: 'amdkila/centos-hip-clang:2.7',
+                                baseImage: 'amdkila/centos-hip-clang:2.9',
                                 buildDockerfile: 'dockerfile-build-centos',
                                 installDockerfile: 'dockerfile-install-centos',
                                 runArgs: baseRunArgs,
@@ -68,7 +68,7 @@ class dockerNodes implements Serializable
             else if(it.contains('ubuntu') && it.contains('hip-clang'))
             {
                 dockerArray[it] = new rocDocker(
-                                baseImage: 'amdkila/hip-clang:2.7',
+                                baseImage: 'amdkila/hip-clang:2.9',
                                 buildDockerfile: 'dockerfile-build-ubuntu-rock',
                                 installDockerfile: 'dockerfile-install-ubuntu',
                                 runArgs: baseRunArgs,
@@ -89,7 +89,7 @@ class dockerNodes implements Serializable
             else if(it.contains('sles'))
             {
                 dockerArray[it] = new rocDocker(
-                                baseImage: 'amdkila/sles15:2.8',
+                                baseImage: 'amdkila/sles15:2.9',
                                 buildDockerfile: 'dockerfile-build-sles',
                                 installDockerfile: 'dockerfile-install-sles',
                                 runArgs: baseRunArgs,
