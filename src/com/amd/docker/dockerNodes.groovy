@@ -65,7 +65,7 @@ class dockerNodes implements Serializable
                                 jenkinsLabel: it + " && " + rocmVersion
                         )
             }
-            else if(it.contains('ubuntu') && it.contains('hip-clang'))
+            else if(it.contains('ubuntu16') && it.contains('hip-clang'))
             {
                 dockerArray[it] = new rocDocker(
                                 baseImage: 'amdkila/hip-clang:2.9',
@@ -86,7 +86,7 @@ class dockerNodes implements Serializable
                                 jenkinsLabel: it + " && " + rocmVersion
                         )
             }
-            else if(it.contains('sles'))
+            else if(it.contains('sles15'))
             {
                 dockerArray[it] = new rocDocker(
                                 baseImage: 'amdkila/sles15:2.9',
@@ -128,7 +128,7 @@ class dockerNodes implements Serializable
                                 jenkinsLabel: it + " && " + rocmVersion
                         )
             }
-            else if(it.contains('ubuntu'))
+            else if(it.contains('ubuntu16'))
             {
                 dockerArray[it] = new rocDocker(
                                 baseImage: 'rocm/dev-ubuntu-16.04:2.9',
