@@ -31,7 +31,12 @@ def call(rocProject project, boolean formatCheck, def dockerArray, def compileCo
     {key ->
         def platform = dockerArray[key]
         
-        node (platform.jenkinsLabel)
+        if (platform.jenkinsLabel.contains('rccl')
+            def nodeLabel = 'rccl'
+        else
+            nodeLabel = platform.jenkinsLabel
+            
+        node (nodeLabel)
         {
             ansiColor('vga')
             {
