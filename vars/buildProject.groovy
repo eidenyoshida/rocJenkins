@@ -31,8 +31,9 @@ def call(rocProject project, boolean formatCheck, def dockerArray, def compileCo
     {key ->
         def platform = dockerArray[key]
         
+        def nodeLabel
         if (platform.jenkinsLabel.contains('rccl'))
-            def nodeLabel = 'rccl'
+            nodeLabel = 'rccl'
         else
             nodeLabel = platform.jenkinsLabel
             
