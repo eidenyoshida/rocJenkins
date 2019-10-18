@@ -89,6 +89,8 @@ String getLibrary( String projectName, String label, String branchName, boolean 
     String permissions = ''
     String packageType
     String packageManager
+    def distro = ['ubuntu16': 'ubuntu-16', 'ubuntu18': 'ubuntu-18', 'centos7': 'el7', 'centos8': 'el8', 'sles15': 'sles-15']
+    String osID = '' 
 
     if(sudo == true) permissions = 'sudo'
     
@@ -103,10 +105,16 @@ String getLibrary( String projectName, String label, String branchName, boolean 
         packageManager = 'rpm --replacefiles'
     }
 
+    distro.each
+    {
+        key, value ->
+        if(label.contains(key)) osID = value
+    }
+
     return """
             ${permissions} wget http://10.216.151.18:8080/job/ROCmSoftwarePlatform/job/${projectName}/job/${branchName}/lastSuccessfulBuild/artifact/*zip*/archive.zip
             ${permissions} unzip archive.zip
-            ${permissions} ${packageManager} -i archive/*/*/*/*/*/*.${packageType}
+            ${permissions} ${packageManager} -i archive/*/*/*/*/*/*${osID}*.${packageType}
         """
 }
 
