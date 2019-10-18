@@ -149,10 +149,14 @@ class rocDocker implements Serializable
                     ${query}
                     ${client}
                 """
-
         return [command, "${directory}/package/*.${fileType}"]
     }
-    
+   
+    def checkoutSecondaryProject(String project, String organization = 'RocmSoftwarePlatform', String branch = 'develop', String commitID = '')
+    {
+        return "git clone https://github.com/${organization}/${project}.git -b ${branch} ${commitID}"
+    }
+ 
 
 /*    
     void UploadDockerHub(String RemoteOrg)

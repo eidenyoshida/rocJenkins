@@ -53,7 +53,7 @@ def call(rocProject project, boolean formatCheck, def dockerArray, def compileCo
                                 env.ROCM_BUILD_ID = rocmBuildId
                                 platform.executorNumber = env.EXECUTOR_NUMBER
                                 build.checkout(project.paths)
-                        
+                                
                                 if(env.MULTI_GPU == '1')
                                 {
                                     String maskNum = env.EXECUTOR_NUMBER
