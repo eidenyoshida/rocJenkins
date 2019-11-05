@@ -128,6 +128,27 @@ class dockerNodes implements Serializable
                                 jenkinsLabel: it + " && " + rocmVersion
                         )
             }
+            else if(it.contains('ubuntu18'))
+            {
+                dockerArray[it] = new rocDocker(
+                                baseImage: 'rocm/dev-ubuntu-18.04:2.9',
+                                buildDockerfile: 'dockerfile-build-ubuntu-rock',
+                                installDockerfile: 'dockerfile-install-ubuntu',
+                                runArgs: baseRunArgs,
+                                buildArgs: '--pull',
+                                infoCommands: """
+                                                set -x 
+                                                /opt/rocm/bin/hcc --version 
+                                                /opt/rocm/bin/rocm_agent_enumerator 
+                                                pwd 
+                                                dkms status
+                                            whoami
+                                            """,
+                                buildImageName:'build-' + prj.name.toLowerCase() + '-artifactory',
+                                paths: prj.paths,
+                                jenkinsLabel: it + " && " + rocmVersion
+                        ) 
+            }
             else if(it.contains('ubuntu'))
             {
                 dockerArray[it] = new rocDocker(
