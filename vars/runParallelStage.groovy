@@ -5,27 +5,32 @@
 import com.amd.project.*
 import com.amd.docker.rocDocker
 
-
 import java.nio.file.Path;
 
-def call(rocProject paths, def dockerArray, def runCode = {}, Closure body)
-{
-    def platforms =[:]
+import org.jenkinsci.plugins.pipeline.modeldefinition.actions.ExecutionModelAction
+import org.jenkinsci.plugins.pipeline.modeldefinition.ast.ModelASTStages
 
-/*    for (platform in dockerArray)
-    {
-        platforms[platform.jenkinsLabel] = platform
-    }
-*/
+def call(rocProject project, boolean formatCheck, def dockerArray, def compileCommand, def testCommand, def packageCommand)
+{
+    if (!currentBuild.rawBuild.getAction(ExecutionModelAction))
+        currentBuild.rawBuild.addAction(new ExecutionModelAction(new ModelASTStages(null)))
+
+    String[] stages = ['Docker ', 'Format Check ', 'Compile ', 'Test ', 'Package ', 'Permissions ', 'Mail ']
+    
     def action =
-    { key ->
+    {key ->
         def platform = dockerArray[key]
 
         node (platform.jenkinsLabel)
         {
-            stage ("${platform.jenkinsLabel}") 
+            stage ("${platform.jenkinsLabel}")
             {
-                body(platform, runCode)
+                for (int i = 0; i < stages.size(); i++) {
+                    stage ("${stages[i]}") 
+			        {
+                        println("RUNNING " + platform.jenkinsLabel + " " + stages[i])
+                    }
+		        }
             }
         }
     }

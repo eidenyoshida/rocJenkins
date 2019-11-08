@@ -26,7 +26,7 @@ class dockerNodes implements Serializable
         {
             if(it.contains('cuda'))
             {
-                dockerArray[it] = new rocDocker(
+                dockerArray[it + " && " + rocmVersion] = new rocDocker(
                                 baseImage: 'nvidia/cuda:10.1-devel',
                                 buildDockerfile: 'dockerfile-build-nvidia-cuda',
                                 installDockerfile: 'dockerfile-install-nvidia-cuda',
@@ -46,7 +46,7 @@ class dockerNodes implements Serializable
             }
             else if(it.contains('centos7') && it.contains('hip-clang'))
             {
-                dockerArray[it] = new rocDocker(
+                dockerArray[it + " && " + rocmVersion] = new rocDocker(
                                 baseImage: 'amdkila/centos-hip-clang:2.9',
                                 buildDockerfile: 'dockerfile-build-centos',
                                 installDockerfile: 'dockerfile-install-centos',
@@ -67,7 +67,7 @@ class dockerNodes implements Serializable
             }
             else if(it.contains('ubuntu') && it.contains('hip-clang'))
             {
-                dockerArray[it] = new rocDocker(
+                dockerArray[it + " && " + rocmVersion] = new rocDocker(
                                 baseImage: 'amdkila/hip-clang:2.9',
                                 buildDockerfile: 'dockerfile-build-ubuntu-rock',
                                 installDockerfile: 'dockerfile-install-ubuntu',
@@ -88,7 +88,7 @@ class dockerNodes implements Serializable
             }
             else if(it.contains('sles'))
             {
-                dockerArray[it] = new rocDocker(
+                dockerArray[it + " && " + rocmVersion] = new rocDocker(
                                 baseImage: 'amdkila/sles15:2.9',
                                 buildDockerfile: 'dockerfile-build-sles',
                                 installDockerfile: 'dockerfile-install-sles',
@@ -109,7 +109,7 @@ class dockerNodes implements Serializable
             }
             else if(it.contains('centos7'))
             {
-                dockerArray[it] = new rocDocker(
+                dockerArray[it + " && " + rocmVersion] = new rocDocker(
                                 baseImage: 'rocm/dev-centos-7:2.9',
                                 buildDockerfile: 'dockerfile-build-centos',
                                 installDockerfile: 'dockerfile-install-centos',
@@ -151,7 +151,7 @@ class dockerNodes implements Serializable
             }
             else if(it.contains('ubuntu'))
             {
-                dockerArray[it] = new rocDocker(
+                dockerArray[it + " && " + rocmVersion] = new rocDocker(
                                 baseImage: 'rocm/dev-ubuntu-16.04:2.9',
                                 buildDockerfile: 'dockerfile-build-ubuntu-rock',
                                 installDockerfile: 'dockerfile-install-ubuntu',
