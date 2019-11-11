@@ -113,7 +113,7 @@ String getLibrary( String projectName, String label, String branchName, boolean 
 
     return """
             ${permissions} wget http://10.216.151.18:8080/job/ROCmSoftwarePlatform/job/${projectName}/job/${branchName}/lastSuccessfulBuild/artifact/*zip*/archive.zip
-            ${permissions} unzip archive.zip
+            ${permissions} unzip -o archive.zip
             ${permissions} ${packageManager} -i archive/*/*/*/*/*/*${osID}*.${packageType}
         """
 }
